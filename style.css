@@ -1,0 +1,17 @@
+body {
+  font-family: sans-serif;
+  text-align: center;
+  background-color: #0e0e2c;
+  color: white;
+  padding: 50px;
+}
+
+a {
+  display: inline-block;
+  margin-top: 20px;
+  padding: 10px 20px;
+  background: #ff007a;
+  color: white;
+  text-decoration: none;
+  border-radius: 8px;
+}
