@@ -1,127 +1,202 @@
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-  import {
-    getAuth,
-    onAuthStateChanged
-  } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-  import {
-    getFirestore,
-    collection,
-    addDoc,
-    query,
-    where,
-    getDocs,
-    doc,
-    deleteDoc,
-    serverTimestamp
-  } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-
-  const firebaseConfig = {
-    apiKey: "AIzaSyAzJdwswNquD0j1HrM-UzlfRr59q4KUxx4",
-    authDomain: "novagg-5bd3a.firebaseapp.com",
-    projectId: "novagg-5bd3a",
-    storageBucket: "novagg-5bd3a.appspot.com",
-    messagingSenderId: "672962665712",
-    appId: "1:672962665712:web:4ed2f4a3c858ef9beeb635",
-    measurementId: "G-0P30E7HKZN"
-  };
-
-  const app = initializeApp(firebaseConfig);
-  const auth = getAuth(app);
-  const db = getFirestore(app);
-
-  let currentUser;
-
-  onAuthStateChanged(auth, async (user) => {
-    if (user && user.emailVerified) {
-      currentUser = user;
-      document.getElementById("usernameDisplay").textContent = user.displayName || user.email;
-      document.getElementById("userPFP").src = user.photoURL || "https://via.placeholder.com/40";
-      loadGames();
-    } else {
-      window.location.href = "login.html";
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>NovaGG Home</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; }
+    .game-item {
+      display: flex;
+      align-items: center;
+      border: 1px solid #ccc;
+      margin-bottom: 10px;
+      padding: 10px;
+      cursor: pointer;
     }
-  });
+    .game-icon {
+      width: 50px;
+      height: 50px;
+      margin-right: 10px;
+      border-radius: 5px;
+      object-fit: cover;
+    }
+    #gameDetails {
+      margin-top: 20px;
+      padding: 10px;
+      border: 1px solid #ddd;
+      background-color: #f9f9f9;
+    }
+    #createGameForm {
+      margin-top: 30px;
+    }
+    .tab-button {
+      margin-top: 20px;
+      padding: 10px;
+      background-color: #eee;
+      border: none;
+      cursor: pointer;
+    }
+    .dropdown-content {
+      display: none;
+      margin-top: 10px;
+      padding: 10px;
+      border: 1px solid #ccc;
+      background-color: #f4f4f4;
+    }
+    .tab-button.active + .dropdown-content {
+      display: block;
+    }
+  </style>
+</head>
+<body>
 
-  async function loadGames() {
-    const gamesList = document.getElementById("gamesList");
-    const gameDetails = document.getElementById("gameDetails");
-    gamesList.querySelectorAll('.game-item').forEach(n => n.remove());
+  <div>
+    <img id="userPFP" src="" alt="User Profile" width="40" height="40" style="vertical-align: middle;" />
+    <span id="usernameDisplay"></span>
+  </div>
 
-    const q = query(collection(db, "games"), where("show", "==", true));
-    const querySnapshot = await getDocs(q);
+  <h2>Game List</h2>
+  <div id="gamesList"></div>
+  <div id="gameDetails"></div>
 
-    querySnapshot.forEach(docSnap => {
-      const game = docSnap.data();
-      const gameItem = document.createElement("div");
-      gameItem.classList.add("game-item");
-      gameItem.innerHTML = `
-        <img src="${game.icon}" alt="${game.name} Icon" class="game-icon" />
-        <div>
-          <div class="game-name">${game.name}</div>
-          <small>By: ${game.creatorName}</small>
-        </div>
-      `;
-      gameItem.addEventListener("click", () => {
-        gameDetails.innerHTML = `
-          <h2>${game.name}</h2>
-          <p>${game.desc}</p>
-          <p><strong>Created by:</strong> ${game.creatorName}</p>
-        `;
+  <h2>Create a New Game</h2>
+  <form id="createGameForm">
+    <input id="gameName" type="text" placeholder="Game Name" required /><br />
+    <input id="gameDesc" type="text" placeholder="Game Description" required /><br />
+    <input id="gameIcon" type="url" placeholder="Game Icon URL" required /><br />
+    <button type="submit">Create Game</button>
+  </form>
 
-        if (currentUser.uid === game.creatorUID) {
-          const deleteBtn = document.createElement("button");
-          deleteBtn.textContent = "Delete Game";
-          deleteBtn.style.marginTop = "10px";
-          deleteBtn.addEventListener("click", async () => {
-            await deleteDoc(doc(db, "games", docSnap.id));
-            alert("Game deleted.");
-            loadGames();
-          });
-          gameDetails.appendChild(deleteBtn);
-        }
-      });
+  <button class="tab-button">NovaGG Studio</button>
+  <div class="dropdown-content">
+    <p>You can edit or delete your own games here.</p>
+  </div>
 
-      gamesList.appendChild(gameItem);
-    });
-  }
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import {
+      getAuth,
+      onAuthStateChanged
+    } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+    import {
+      getFirestore,
+      collection,
+      addDoc,
+      query,
+      where,
+      getDocs,
+      doc,
+      deleteDoc,
+      serverTimestamp
+    } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-  // Game Creation Form
-  document.getElementById("createGameForm").addEventListener("submit", async (e) => {
-    e.preventDefault();
+    const firebaseConfig = {
+      apiKey: "AIzaSyAzJdwswNquD0j1HrM-UzlfRr59q4KUxx4",
+      authDomain: "novagg-5bd3a.firebaseapp.com",
+      projectId: "novagg-5bd3a",
+      storageBucket: "novagg-5bd3a.appspot.com",
+      messagingSenderId: "672962665712",
+      appId: "1:672962665712:web:4ed2f4a3c858ef9beeb635",
+      measurementId: "G-0P30E7HKZN"
+    };
 
-    const name = document.getElementById("gameName").value.trim();
-    const desc = document.getElementById("gameDesc").value.trim();
-    const icon = document.getElementById("gameIcon").value.trim();
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
 
-    if (!currentUser) return alert("User not logged in");
+    let currentUser;
 
-    await addDoc(collection(db, "games"), {
-      name,
-      desc,
-      icon,
-      creatorUID: currentUser.uid,
-      creatorName: currentUser.displayName || currentUser.email,
-      show: true,
-      createdAt: serverTimestamp()
-    });
-
-    alert("Game created!");
-    document.getElementById("createGameForm").reset();
-    loadGames();
-  });
-
-  // Dropdown logic
-  const tabs = document.querySelectorAll(".tab-button");
-  tabs.forEach(tab => {
-    tab.addEventListener("click", () => {
-      const isActive = tab.classList.contains("active");
-      tabs.forEach(t => t.classList.remove("active"));
-      document.querySelectorAll(".dropdown-content").forEach(d => d.style.display = "none");
-      if (!isActive) {
-        tab.classList.add("active");
-        tab.nextElementSibling.style.display = "block";
+    onAuthStateChanged(auth, async (user) => {
+      if (user && user.emailVerified) {
+        currentUser = user;
+        document.getElementById("usernameDisplay").textContent = user.displayName || user.email;
+        document.getElementById("userPFP").src = user.photoURL || "https://via.placeholder.com/40";
+        loadGames();
+      } else {
+        window.location.href = "login.html";
       }
     });
-  });
-</script>
+
+    async function loadGames() {
+      const gamesList = document.getElementById("gamesList");
+      const gameDetails = document.getElementById("gameDetails");
+      gamesList.innerHTML = "";
+      gameDetails.innerHTML = "";
+
+      const q = query(collection(db, "games"), where("show", "==", true));
+      const querySnapshot = await getDocs(q);
+
+      querySnapshot.forEach(docSnap => {
+        const game = docSnap.data();
+        const gameItem = document.createElement("div");
+        gameItem.classList.add("game-item");
+        gameItem.innerHTML = `
+          <img src="${game.icon}" alt="${game.name} Icon" class="game-icon" />
+          <div>
+            <div class="game-name"><strong>${game.name}</strong></div>
+            <small>By: ${game.creatorName}</small>
+          </div>
+        `;
+        gameItem.addEventListener("click", () => {
+          gameDetails.innerHTML = `
+            <h3>${game.name}</h3>
+            <p>${game.desc}</p>
+            <p><strong>Created by:</strong> ${game.creatorName}</p>
+          `;
+
+          if (currentUser.uid === game.creatorUID) {
+            const deleteBtn = document.createElement("button");
+            deleteBtn.textContent = "Delete Game";
+            deleteBtn.style.marginTop = "10px";
+            deleteBtn.addEventListener("click", async () => {
+              await deleteDoc(doc(db, "games", docSnap.id));
+              alert("Game deleted.");
+              loadGames();
+            });
+            gameDetails.appendChild(deleteBtn);
+          }
+        });
+
+        gamesList.appendChild(gameItem);
+      });
+    }
+
+    document.getElementById("createGameForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const name = document.getElementById("gameName").value.trim();
+      const desc = document.getElementById("gameDesc").value.trim();
+      const icon = document.getElementById("gameIcon").value.trim();
+
+      if (!currentUser) return alert("User not logged in");
+
+      await addDoc(collection(db, "games"), {
+        name,
+        desc,
+        icon,
+        creatorUID: currentUser.uid,
+        creatorName: currentUser.displayName || currentUser.email,
+        show: true,
+        createdAt: serverTimestamp()
+      });
+
+      alert("Game created!");
+      document.getElementById("createGameForm").reset();
+      loadGames();
+    });
+
+    const tabs = document.querySelectorAll(".tab-button");
+    tabs.forEach(tab => {
+      tab.addEventListener("click", () => {
+        const isActive = tab.classList.contains("active");
+        tabs.forEach(t => t.classList.remove("active"));
+        document.querySelectorAll(".dropdown-content").forEach(d => d.style.display = "none");
+        if (!isActive) {
+          tab.classList.add("active");
+          tab.nextElementSibling.style.display = "block";
+        }
+      });
+    });
+  </script>
+</body>
+</html>
