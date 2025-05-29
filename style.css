@@ -1,17 +1,85 @@
 body {
-  font-family: sans-serif;
-  text-align: center;
-  background-color: #0e0e2c;
-  color: white;
-  padding: 50px;
+  margin: 0;
+  font-family: 'Segoe UI', sans-serif;
+  background: #000;
+  color: #fff;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  overflow: hidden;
 }
 
-a {
-  display: inline-block;
-  margin-top: 20px;
-  padding: 10px 20px;
-  background: #ff007a;
-  color: white;
-  text-decoration: none;
-  border-radius: 8px;
+.container {
+  text-align: center;
+  animation: fadeIn 2s ease-out;
+}
+
+h1 {
+  font-size: 2.5rem;
+  margin-bottom: 2rem;
+  animation: slideDown 1s ease-in-out forwards;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+  animation: slideUp 1.5s ease-in-out forwards;
+}
+
+input, button {
+  padding: 1rem;
+  border: none;
+  border-radius: 0.5rem;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+}
+
+input {
+  background: #111;
+  color: #fff;
+  border: 1px solid #333;
+}
+
+input:focus {
+  outline: none;
+  border-color: #fff;
+  background: #222;
+}
+
+button {
+  background: #fff;
+  color: #000;
+  font-weight: bold;
+  cursor: pointer;
+  border: 1px solid #fff;
+}
+
+button:hover {
+  background: #000;
+  color: #fff;
+  border: 1px solid #fff;
+  transform: scale(1.05);
+}
+
+.status {
+  margin-top: 1.5rem;
+  font-weight: bold;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { transform: translateY(50px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes slideDown {
+  from { transform: translateY(-30px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
 }
