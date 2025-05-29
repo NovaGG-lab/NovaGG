@@ -1,180 +1,234 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>NovaGG - Home</title>
-  <link rel="stylesheet" href="style.css" />
-  <style>
-    .header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 1rem;
-      border-bottom: 1px solid #444;
-    }
-    .user-info {
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-    }
-    .pfp {
-      width: 48px;
-      height: 48px;
-      border-radius: 50%;
-      background-color: #888;
-    }
-    .btn {
-      background: #fff;
-      color: #000;
-      font-weight: bold;
-      border: none;
-      border-radius: 6px;
-      padding: 0.5rem 1rem;
-      cursor: pointer;
-    }
-    .games {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-      gap: 1rem;
-      padding: 1rem;
-    }
-    .game-card {
-      background: #111;
-      padding: 1rem;
-      border-radius: 8px;
-      text-align: center;
-      cursor: pointer;
-      transition: transform 0.3s;
-    }
-    .game-card:hover {
-      transform: scale(1.05);
-    }
-    .game-icon {
-      width: 64px;
-      height: 64px;
-      margin-bottom: 0.5rem;
-      border-radius: 8px;
-    }
-    .create-form {
-      display: none;
-      flex-direction: column;
-      gap: 0.75rem;
-      margin: 1rem;
-    }
-    .create-form input, .create-form textarea {
-      padding: 0.5rem;
-      border-radius: 4px;
-      border: 1px solid #333;
-    }
-    .show { display: flex; }
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>NovaGG - Home</title>
+<link rel="stylesheet" href="style.css" />
+<style>
+  body {
+    margin: 0; padding: 0;
+    font-family: 'Segoe UI', sans-serif;
+    background: #000; color: #fff;
+    display: flex; flex-direction: column; height: 100vh;
+  }
+  header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 20px;
+    background: #111;
+    height: 60px;
+    position: relative;
+    z-index: 10;
+  }
+  /* Top center tab container */
+  #topTabs {
+    display: flex;
+    gap: 20px;
+  }
+  .tab-button {
+    position: relative;
+    background: #222;
+    border: none;
+    color: #fff;
+    padding: 8px 16px;
+    cursor: pointer;
+    border-radius: 8px 8px 0 0;
+    font-weight: bold;
+    transition: background 0.3s ease;
+  }
+  .tab-button:hover {
+    background: #444;
+  }
+  .dropdown-content {
+    display: none;
+    position: absolute;
+    top: 100%; left: 0;
+    background: #222;
+    min-width: 200px;
+    padding: 15px;
+    border-radius: 0 0 8px 8px;
+    box-shadow: 0 5px 10px rgba(0,0,0,0.7);
+    z-index: 20;
+  }
+  .tab-button.active + .dropdown-content {
+    display: block;
+  }
+
+  /* PFP + username top right */
+  #userProfile {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+  }
+  #userProfile img {
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    border: 2px solid #0f0;
+  }
+  #userProfile span {
+    font-weight: 700;
+  }
+
+  /* Left middle game list */
+  #gamesList {
+    flex-grow: 1;
+    width: 250px;
+    background: #111;
+    overflow-y: auto;
+    padding: 20px;
+    margin: 20px;
+    border-radius: 12px;
+  }
+  #gamesList h2 {
+    margin-top: 0;
+    font-weight: 700;
+    border-bottom: 2px solid #0f0;
+    padding-bottom: 10px;
+  }
+  .game-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 8px;
+    background: #222;
+    margin-bottom: 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.3s ease;
+  }
+  .game-item:hover {
+    background: #0f0;
+    color: #000;
+  }
+  .game-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 8px;
+    object-fit: cover;
+  }
+  .game-name {
+    font-weight: 600;
+  }
+
+  /* Bottom copyright */
+  footer {
+    text-align: center;
+    padding: 10px 0;
+    font-size: 0.9rem;
+    background: #111;
+    color: #666;
+  }
+</style>
 </head>
 <body>
-  <div class="header">
-    <div class="user-info">
-      <div class="pfp" id="pfp"></div>
-      <span id="username">Loading...</span>
+
+<header>
+  <div id="topTabs">
+    <button class="tab-button" id="settingsBtn">Settings</button>
+    <div class="dropdown-content" id="settingsDropdown">
+      <p><strong>Settings Content Here</strong></p>
+      <p>(Add your settings form etc.)</p>
     </div>
-    <div>
-      <button class="btn" onclick="openSettings()">Settings</button>
-      <button class="btn" onclick="viewProfile()">View Profile</button>
+
+    <button class="tab-button" id="viewProfileBtn">View Profile</button>
+    <div class="dropdown-content" id="viewProfileDropdown">
+      <p><strong>Profile Content Here</strong></p>
+      <p>(User info, stats, etc.)</p>
+    </div>
+
+    <button class="tab-button" id="createGameBtn">Create Game</button>
+    <div class="dropdown-content" id="createGameDropdown">
+      <form id="createGameForm">
+        <label>Game Icon URL</label><br />
+        <input type="text" id="gameIcon" placeholder="Icon URL" required /><br />
+        <label>Game Name</label><br />
+        <input type="text" id="gameName" placeholder="Name" required /><br />
+        <label>Game Description</label><br />
+        <textarea id="gameDesc" placeholder="Description" rows="3" required></textarea><br />
+        <button type="submit">Create Game</button>
+      </form>
     </div>
   </div>
 
-  <div style="padding: 1rem;">
-    <button class="btn" onclick="toggleCreateGameForm()">Create Game</button>
-    <div class="create-form" id="createGameForm">
-      <input type="text" id="gameIcon" placeholder="Game Icon URL" />
-      <input type="text" id="gameName" placeholder="Game Name" />
-      <textarea id="gameDesc" rows="3" placeholder="Game Description"></textarea>
-      <button class="btn" onclick="createGame()">Create Game</button>
-    </div>
+  <div id="userProfile">
+    <img src="https://via.placeholder.com/40" alt="PFP" id="userPFP" />
+    <span id="usernameDisplay">Username</span>
   </div>
+</header>
 
-  <div class="games" id="gamesContainer">
-    <!-- Games will be listed here -->
-  </div>
+<div style="display:flex; flex-grow: 1;">
+  <aside id="gamesList">
+    <h2>Games</h2>
+    <!-- Games will be inserted here dynamically -->
+  </aside>
+  <main id="gameDetails" style="flex-grow: 1; padding: 20px; color: #eee;">
+    <h2>Game Details</h2>
+    <p>Select a game to see its description.</p>
+  </main>
+</div>
 
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-    import {
-      getAuth,
-      onAuthStateChanged
-    } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-    import {
-      getFirestore,
-      collection,
-      addDoc,
-      getDocs,
-      doc,
-      getDoc
-    } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+<footer>
+  &copy; 2025 NovaGG - All rights reserved
+</footer>
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyAzJdwswNquD0j1HrM-UzlfRr59q4KUxx4",
-      authDomain: "novagg-5bd3a.firebaseapp.com",
-      projectId: "novagg-5bd3a",
-      storageBucket: "novagg-5bd3a.appspot.com",
-      messagingSenderId: "672962665712",
-      appId: "1:672962665712:web:4ed2f4a3c858ef9beeb635",
-      measurementId: "G-0P30E7HKZN"
-    };
+<script>
+  // Dropdown toggle logic
+  const tabs = document.querySelectorAll(".tab-button");
+  tabs.forEach(tab => {
+    tab.addEventListener("click", () => {
+      const isActive = tab.classList.contains("active");
+      // Close all
+      tabs.forEach(t => t.classList.remove("active"));
+      document.querySelectorAll(".dropdown-content").forEach(drop => drop.style.display = "none");
 
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db = getFirestore(app);
-
-    onAuthStateChanged(auth, async (user) => {
-      if (!user) {
-        window.location.href = "login.html";
-        return;
+      if (!isActive) {
+        tab.classList.add("active");
+        tab.nextElementSibling.style.display = "block";
       }
-      const userDoc = await getDoc(doc(db, "users", user.uid));
-      document.getElementById("username").textContent = userDoc.exists() ? userDoc.data().username : user.email;
-      loadGames();
     });
+  });
 
-    async function loadGames() {
-      const container = document.getElementById("gamesContainer");
-      container.innerHTML = "";
-      const querySnapshot = await getDocs(collection(db, "games"));
-      querySnapshot.forEach((doc) => {
-        const game = doc.data();
-        const div = document.createElement("div");
-        div.className = "game-card";
-        div.innerHTML = `
-          <img class="game-icon" src="${game.icon}" alt="icon" />
-          <h3>${game.name}</h3>
-          <p>${game.description}</p>
-        `;
-        div.onclick = () => alert(`Description:\n${game.description}`);
-        container.appendChild(div);
-      });
-    }
+  // Sample games data — replace with your Firebase fetch and filter
+  const games = [
+    { id: 'game1', icon: 'https://via.placeholder.com/50', name: 'Game One', desc: 'First game description', show: true },
+    { id: 'game2', icon: 'https://via.placeholder.com/50', name: 'Hidden Game', desc: 'This should not show', show: false },
+    { id: 'game3', icon: 'https://via.placeholder.com/50', name: 'Game Two', desc: 'Second game description', show: true },
+  ];
 
-    async function createGame() {
-      const icon = document.getElementById("gameIcon").value;
-      const name = document.getElementById("gameName").value;
-      const description = document.getElementById("gameDesc").value;
-      if (!name || !description || !icon) return;
-      await addDoc(collection(db, "games"), { icon, name, description });
-      toggleCreateGameForm();
-      loadGames();
-    }
+  // Filter games that should be shown
+  const visibleGames = games.filter(g => g.show);
 
-    function toggleCreateGameForm() {
-      const form = document.getElementById("createGameForm");
-      form.classList.toggle("show");
-    }
+  const gamesList = document.getElementById("gamesList");
+  const gameDetails = document.getElementById("gameDetails");
 
-    function openSettings() {
-      alert("Settings page coming soon!");
-    }
+  // Populate games list
+  visibleGames.forEach(game => {
+    const gameItem = document.createElement("div");
+    gameItem.classList.add("game-item");
+    gameItem.innerHTML = `
+      <img src="${game.icon}" alt="${game.name} Icon" class="game-icon" />
+      <div class="game-name">${game.name}</div>
+    `;
+    gameItem.addEventListener("click", () => {
+      gameDetails.innerHTML = `<h2>${game.name}</h2><p>${game.desc}</p>`;
+    });
+    gamesList.appendChild(gameItem);
+  });
 
-    function viewProfile() {
-      alert("View profile feature coming soon!");
-    }
-  </script>
+  // Populate username & PFP from session or Firebase user info
+  // Replace with your actual data fetch:
+  document.getElementById("usernameDisplay").textContent = "YourUsername"; 
+  // PFP default already set, update src if user has custom one
+
+  // Handle game creation form submit
+  document.getElementById("createGameForm").addEventListener("submit", e => {
+    e.preventDefault();
+    alert("Game creation functionality to be implemented.");
+  });
+</script>
+
 </body>
 </html>
