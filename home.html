@@ -119,7 +119,10 @@
   /* Style for create game form */
   #createGameForm input[type="text"],
   #createGameForm textarea,
-  #createGameForm input[type="file"] {
+  #createGameForm input[type="file"],
+  #settingsForm input[type="text"],
+  #settingsForm input[type="email"],
+  #settingsForm input[type="password"] {
     width: 100%;
     margin-bottom: 10px;
     padding: 6px 8px;
@@ -127,7 +130,8 @@
     border: none;
     font-size: 1rem;
   }
-  #createGameForm button {
+  #createGameForm button,
+  #settingsForm button {
     background: #0f0;
     color: #000;
     font-weight: bold;
@@ -136,8 +140,17 @@
     border-radius: 6px;
     cursor: pointer;
   }
-  #createGameForm button:hover {
+  #createGameForm button:hover,
+  #settingsForm button:hover {
     background: #0c0;
+  }
+  #logoutBtn {
+    background:#f33; color:#fff; border:none; padding:8px 12px; border-radius:6px; cursor:pointer;
+    width: 100%;
+    font-weight: bold;
+  }
+  #logoutBtn:hover {
+    background:#c00;
   }
 </style>
 </head>
@@ -147,12 +160,28 @@
   <div id="topTabs">
     <button class="tab-button" id="settingsBtn">Settings</button>
     <div class="dropdown-content" id="settingsDropdown">
-      <p><strong>Settings Content Here</strong></p>
+      <h3>Settings</h3>
+      <form id="settingsForm">
+        <label>Change Username:</label>
+        <input type="text" id="newUsername" placeholder="New Username" minlength="3" maxlength="20" />
+        <label>Change Email:</label>
+        <input type="email" id="newEmail" placeholder="New Email" />
+        <label>Change Password:</label>
+        <input type="password" id="newPassword" placeholder="New Password" minlength="6" />
+        <button type="submit">Update Settings</button>
+      </form>
+      <hr />
+      <button id="logoutBtn">Log Out</button>
+      <p id="settingsStatus" style="color:#0f0; margin-top: 10px;"></p>
     </div>
 
     <button class="tab-button" id="viewProfileBtn">View Profile</button>
-    <div class="dropdown-content" id="viewProfileDropdown">
-      <p><strong>Profile Content Here</strong></p>
+    <div class="dropdown-content" id="viewProfileDropdown" style="max-width: 320px;">
+      <h3>Your Profile</h3>
+      <img id="profilePic" src="https://via.placeholder.com/100" alt="Profile Picture" style="border-radius: 50%; width: 100px; height: 100px;" />
+      <p><strong>Username:</strong> <span id="profileUsername">Loading...</span></p>
+      <p><strong>Email:</strong> <span id="profileEmail">Loading...</span></p>
+      <p><strong>Games Created:</strong> <span id="profileGamesCount">0</span></p>
     </div>
 
     <button class="tab-button" id="createGameBtn">Create Game</button>
@@ -194,7 +223,10 @@
   import {
     getAuth,
     onAuthStateChanged,
-    signOut
+    signOut,
+    updateProfile,
+    updateEmail,
+    updatePassword
   } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
   import {
     getFirestore,
@@ -207,6 +239,7 @@
     deleteDoc,
     serverTimestamp,
     getDoc,
+    setDoc
   } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
   const firebaseConfig = {
@@ -225,19 +258,43 @@
 
   let currentUser;
 
+  // Tab dropdown toggle logic (only one open at a time)
+  const tabs = document.querySelectorAll(".tab-button");
+  tabs.forEach(tab => {
+    tab.addEventListener("click", () => {
+      const isActive = tab.classList.contains("active");
+      tabs.forEach(t => t.classList.remove("active"));
+      document.querySelectorAll(".dropdown-content").forEach(d => d.style.display = "none");
+      if (!isActive) {
+        tab.classList.add("active");
+        tab.nextElementSibling.style.display = "block";
+      }
+    });
+  });
+
   onAuthStateChanged(auth, async (user) => {
     if (user && user.emailVerified) {
       currentUser = user;
 
-      // Get username from Firestore
+      // Get username from Firestore or fallback
       const userDoc = await getDoc(doc(db, "users", user.uid));
       let username = user.displayName;
       if (userDoc.exists() && userDoc.data().username) {
         username = userDoc.data().username;
       }
 
+      // Update header
       document.getElementById("usernameDisplay").textContent = username || user.email;
       document.getElementById("userPFP").src = user.photoURL || "https://via.placeholder.com/40";
+
+      // Load profile info in dropdown
+      document.getElementById("profileUsername").textContent = username || "Unknown";
+      document.getElementById("profileEmail").textContent = user.email;
+
+      // Count games created by user
+      const qGames = query(collection(db, "games"), where("creatorUID", "==", user.uid));
+      const gamesSnapshot = await getDocs(qGames);
+      document.getElementById("profileGamesCount").textContent = gamesSnapshot.size;
 
       loadGames();
     } else {
@@ -245,11 +302,9 @@
     }
   });
 
-  // Game loading and display
   async function loadGames() {
     const gamesList = document.getElementById("gamesList");
     const gameDetails = document.getElementById("gameDetails");
-    // Clear old games (except heading)
     [...gamesList.querySelectorAll('.game-item')].forEach(n => n.remove());
 
     const q = query(collection(db, "games"), where("show", "==", true));
@@ -324,8 +379,6 @@
         return;
       }
 
-      // For simplicity: We'll convert image to base64 and store that string as "icon"
-      // (For production, better upload to Firebase Storage and save URL)
       const iconBase64 = img.src;
 
       await addDoc(collection(db, "games"), {
@@ -346,21 +399,57 @@
     fileReader.readAsDataURL(iconFile);
   });
 
-  // Tabs dropdown logic
-  const tabs = document.querySelectorAll(".tab-button");
-  tabs.forEach(tab => {
-    tab.addEventListener("click", () => {
-      const isActive = tab.classList.contains("active");
-      tabs.forEach(t => t.classList.remove("active"));
-      document.querySelectorAll(".dropdown-content").forEach(d => d.style.display = "none");
-      if (!isActive) {
-        tab.classList.add("active");
-        tab.nextElementSibling.style.display = "block";
+  // Settings Form submission (update username, email, password)
+  document.getElementById("settingsForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    if (!currentUser) return;
+
+    const newUsername = document.getElementById("newUsername").value.trim();
+    const newEmail = document.getElementById("newEmail").value.trim();
+    const newPassword = document.getElementById("newPassword").value.trim();
+    const status = document.getElementById("settingsStatus");
+    status.style.color = "#0f0";
+    status.textContent = "Updating...";
+
+    try {
+      // Update username (in Firestore users collection and Firebase profile)
+      if (newUsername.length >= 3) {
+        await updateProfile(currentUser, { displayName: newUsername });
+        await setDoc(doc(db, "users", currentUser.uid), { username: newUsername }, { merge: true });
+        document.getElementById("usernameDisplay").textContent = newUsername;
+        document.getElementById("profileUsername").textContent = newUsername;
       }
-    });
+
+      // Update email
+      if (newEmail) {
+        await updateEmail(currentUser, newEmail);
+        document.getElementById("profileEmail").textContent = newEmail;
+      }
+
+      // Update password
+      if (newPassword.length >= 6) {
+        await updatePassword(currentUser, newPassword);
+      }
+
+      status.textContent = "Settings updated successfully.";
+      e.target.reset();
+
+    } catch (err) {
+      console.error(err);
+      status.style.color = "#f00";
+      status.textContent = "Error: " + err.message;
+    }
   });
 
-  // Optional: clicking user profile signs out
+  // Logout button
+  document.getElementById("logoutBtn").addEventListener("click", async () => {
+    if (confirm("Sign out?")) {
+      await signOut(auth);
+      window.location.href = "login.html";
+    }
+  });
+
+  // Clicking user profile also signs out
   document.getElementById("userProfile").addEventListener("click", async () => {
     if (confirm("Sign out?")) {
       await signOut(auth);
