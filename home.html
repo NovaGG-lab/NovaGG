@@ -4,7 +4,6 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>NovaGG - Home</title>
-<link rel="stylesheet" href="style.css" />
 <style>
   body {
     margin: 0; padding: 0;
@@ -22,7 +21,6 @@
     position: relative;
     z-index: 10;
   }
-  /* Top center tab container */
   #topTabs {
     display: flex;
     gap: 20px;
@@ -36,7 +34,6 @@
     cursor: pointer;
     border-radius: 8px 8px 0 0;
     font-weight: bold;
-    transition: background 0.3s ease;
   }
   .tab-button:hover {
     background: #444;
@@ -55,8 +52,6 @@
   .tab-button.active + .dropdown-content {
     display: block;
   }
-
-  /* PFP + username top right */
   #userProfile {
     display: flex;
     align-items: center;
@@ -71,8 +66,6 @@
   #userProfile span {
     font-weight: 700;
   }
-
-  /* Left middle game list */
   #gamesList {
     flex-grow: 1;
     width: 250px;
@@ -112,14 +105,17 @@
   .game-name {
     font-weight: 600;
   }
-
-  /* Bottom copyright */
   footer {
     text-align: center;
     padding: 10px 0;
     font-size: 0.9rem;
     background: #111;
     color: #666;
+  }
+  /* Flex container for games list + details */
+  main.content {
+    display: flex;
+    flex-grow: 1;
   }
 </style>
 </head>
@@ -130,13 +126,11 @@
     <button class="tab-button" id="settingsBtn">Settings</button>
     <div class="dropdown-content" id="settingsDropdown">
       <p><strong>Settings Content Here</strong></p>
-      <p>(Add your settings form etc.)</p>
     </div>
 
     <button class="tab-button" id="viewProfileBtn">View Profile</button>
     <div class="dropdown-content" id="viewProfileDropdown">
       <p><strong>Profile Content Here</strong></p>
-      <p>(User info, stats, etc.)</p>
     </div>
 
     <button class="tab-button" id="createGameBtn">Create Game</button>
@@ -159,28 +153,43 @@
   </div>
 </header>
 
-<div style="display:flex; flex-grow: 1;">
+<main class="content">
   <aside id="gamesList">
     <h2>Games</h2>
-    <!-- Games will be inserted here dynamically -->
+    <!-- Games injected here -->
   </aside>
-  <main id="gameDetails" style="flex-grow: 1; padding: 20px; color: #eee;">
+  <section id="gameDetails" style="flex-grow:1; padding:20px; color:#eee;">
     <h2>Game Details</h2>
     <p>Select a game to see its description.</p>
-  </main>
-</div>
+  </section>
+</main>
 
 <footer>
   &copy; 2025 NovaGG - All rights reserved
 </footer>
 
-<script>
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyAzJdwswNquD0j1HrM-UzlfRr59q4KUxx4",
+    authDomain: "novagg-5bd3a.firebaseapp.com",
+    projectId: "novagg-5bd3a",
+    storageBucket: "novagg-5bd3a.appspot.com",
+    messagingSenderId: "672962665712",
+    appId: "1:672962665712:web:4ed2f4a3c858ef9beeb635",
+    measurementId: "G-0P30E7HKZN"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+
   // Dropdown toggle logic
   const tabs = document.querySelectorAll(".tab-button");
   tabs.forEach(tab => {
     tab.addEventListener("click", () => {
       const isActive = tab.classList.contains("active");
-      // Close all
       tabs.forEach(t => t.classList.remove("active"));
       document.querySelectorAll(".dropdown-content").forEach(drop => drop.style.display = "none");
 
@@ -191,43 +200,49 @@
     });
   });
 
-  // Sample games data — replace with your Firebase fetch and filter
-  const games = [
+  // Auth check & user info load
+  onAuthStateChanged(auth, (user) => {
+    if (user && user.emailVerified) {
+      document.getElementById("usernameDisplay").textContent = user.displayName || user.email || "User";
+      document.getElementById("userPFP").src = user.photoURL || "https://via.placeholder.com/40";
+      loadGames();
+    } else {
+      window.location.href = "login.html";
+    }
+  });
+
+  // Sample games data; replace with your real Firebase fetch
+  const allGames = [
     { id: 'game1', icon: 'https://via.placeholder.com/50', name: 'Game One', desc: 'First game description', show: true },
-    { id: 'game2', icon: 'https://via.placeholder.com/50', name: 'Hidden Game', desc: 'This should not show', show: false },
+    { id: 'game2', icon: 'https://via.placeholder.com/50', name: 'Hidden Game', desc: 'Should not show', show: false },
     { id: 'game3', icon: 'https://via.placeholder.com/50', name: 'Game Two', desc: 'Second game description', show: true },
   ];
 
-  // Filter games that should be shown
-  const visibleGames = games.filter(g => g.show);
+  function loadGames() {
+    const gamesList = document.getElementById("gamesList");
+    const gameDetails = document.getElementById("gameDetails");
+    gamesList.querySelectorAll('.game-item').forEach(n => n.remove()); // clear old list
 
-  const gamesList = document.getElementById("gamesList");
-  const gameDetails = document.getElementById("gameDetails");
-
-  // Populate games list
-  visibleGames.forEach(game => {
-    const gameItem = document.createElement("div");
-    gameItem.classList.add("game-item");
-    gameItem.innerHTML = `
-      <img src="${game.icon}" alt="${game.name} Icon" class="game-icon" />
-      <div class="game-name">${game.name}</div>
-    `;
-    gameItem.addEventListener("click", () => {
-      gameDetails.innerHTML = `<h2>${game.name}</h2><p>${game.desc}</p>`;
+    allGames.filter(g => g.show).forEach(game => {
+      const gameItem = document.createElement("div");
+      gameItem.classList.add("game-item");
+      gameItem.innerHTML = `
+        <img src="${game.icon}" alt="${game.name} Icon" class="game-icon" />
+        <div class="game-name">${game.name}</div>
+      `;
+      gameItem.addEventListener("click", () => {
+        gameDetails.innerHTML = `<h2>${game.name}</h2><p>${game.desc}</p>`;
+      });
+      gamesList.appendChild(gameItem);
     });
-    gamesList.appendChild(gameItem);
-  });
+  }
 
-  // Populate username & PFP from session or Firebase user info
-  // Replace with your actual data fetch:
-  document.getElementById("usernameDisplay").textContent = "YourUsername"; 
-  // PFP default already set, update src if user has custom one
-
-  // Handle game creation form submit
+  // Create game form
   document.getElementById("createGameForm").addEventListener("submit", e => {
     e.preventDefault();
-    alert("Game creation functionality to be implemented.");
+    alert("Game creation to be implemented");
   });
+
 </script>
 
 </body>
