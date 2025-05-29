@@ -1,3 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>NovaGG Register</title>
+<style>
+  /* Simple black & white theme with fade and slide animations */
+  body {
+    background: #000;
+    color: #fff;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+  }
+  .container {
+    background: #111;
+    padding: 2rem;
+    border-radius: 8px;
+    box-shadow: 0 0 12px #fff3;
+    width: 320px;
+    animation: fadeIn 1s ease forwards;
+  }
+  h1 {
+    margin-bottom: 1rem;
+    text-align: center;
+    font-weight: 700;
+  }
+  form {
+    display: flex;
+    flex-direction: column;
+  }
+  input {
+    background: #222;
+    border: none;
+    border-bottom: 2px solid #555;
+    color: #eee;
+    padding: 0.8rem 0.5rem;
+    margin-bottom: 1.2rem;
+    font-size: 1rem;
+    transition: border-color 0.3s ease;
+  }
+  input:focus {
+    outline: none;
+    border-bottom-color: #fff;
+  }
+  button {
+    background: #fff;
+    color: #000;
+    border: none;
+    padding: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: background 0.3s ease;
+  }
+  button:hover {
+    background: #ddd;
+  }
+  .status {
+    margin-top: 1rem;
+    text-align: center;
+    font-weight: 600;
+    min-height: 1.2rem;
+    animation: fadeIn 1.5s ease forwards;
+  }
+
+  /* Animations */
+  @keyframes fadeIn {
+    from {opacity: 0;}
+    to {opacity: 1;}
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <h1>Create Your NovaGG Account</h1>
+  <form id="registerForm">
+    <input type="text" id="username" placeholder="Username" required autocomplete="off" />
+    <input type="email" id="email" placeholder="Email" required autocomplete="off" />
+    <input type="password" id="password" placeholder="Password" required autocomplete="off" />
+    <button type="submit">Register</button>
+  </form>
+  <p id="statusMessage" class="status"></p>
+</div>
+
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
   import {
@@ -13,14 +103,14 @@
   } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
   const firebaseConfig = {
-  apiKey: "AIzaSyAzJdwswNquD0j1HrM-UzlfRr59q4KUxx4",
-  authDomain: "novagg-5bd3a.firebaseapp.com",
-  projectId: "novagg-5bd3a",
-  storageBucket: "novagg-5bd3a.firebasestorage.app",
-  messagingSenderId: "672962665712",
-  appId: "1:672962665712:web:4ed2f4a3c858ef9beeb635",
-  measurementId: "G-0P30E7HKZN"
-};
+    apiKey: "AIzaSyAzJdwswNquD0j1HrM-UzlfRr59q4KUxx4",
+    authDomain: "novagg-5bd3a.firebaseapp.com",
+    projectId: "novagg-5bd3a",
+    storageBucket: "novagg-5bd3a.firebasestorage.app",
+    messagingSenderId: "672962665712",
+    appId: "1:672962665712:web:4ed2f4a3c858ef9beeb635",
+    measurementId: "G-0P30E7HKZN"
+  };
 
   const app = initializeApp(firebaseConfig);
   const auth = getAuth(app);
@@ -31,17 +121,17 @@
 
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
-    const username = document.getElementById("username").value;
-    const email = document.getElementById("email").value;
+
+    const username = document.getElementById("username").value.trim();
+    const email = document.getElementById("email").value.trim();
     const password = document.getElementById("password").value;
+
+    status.textContent = "Registering...";
+    status.style.color = "#fff";
 
     try {
       console.log("Creating user...");
-      const userCredential = await createUserWithEmailAndPassword(
-        auth,
-        email,
-        password
-      );
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
       console.log("User created:", user.uid);
 
@@ -55,10 +145,9 @@
         console.log("User data saved.");
       } catch (firestoreError) {
         console.error("Firestore write error:", firestoreError);
-        status.textContent =
-          "Error saving user data: " + firestoreError.message;
+        status.textContent = "Error saving user data: " + firestoreError.message;
         status.style.color = "#f00";
-        return; // stop if Firestore write fails
+        return;
       }
 
       console.log("Sending verification email...");
@@ -66,10 +155,15 @@
       console.log("Verification email sent!");
       status.textContent = "Success! Check your email to verify your account.";
       status.style.color = "#0f0";
-    } catch (err) {
-      console.error("Registration error:", err);
-      status.textContent = "Error: " + err.message;
+
+      form.reset();
+    } catch (error) {
+      console.error("Registration error:", error);
+      status.textContent = "Error: " + error.message;
       status.style.color = "#f00";
     }
   });
 </script>
+
+</body>
+</html>
