@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>User Search</title>
+  <style>
+    body { background: #000; color: #fff; font-family: Arial, sans-serif; padding: 20px; }
+    input[type="text"] {
+      width: 100%; padding: 10px; font-size: 1rem;
+      margin-bottom: 20px; border: none; border-radius: 6px;
+    }
+    .user-card {
+      background: #111; padding: 10px 15px; border-radius: 8px;
+      margin-bottom: 12px; display: flex; align-items: center;
+      gap: 15px;
+    }
+    .user-card img {
+      width: 50px; height: 50px; border-radius: 50%;
+      object-fit: cover;
+    }
+    .user-info { line-height: 1.3; }
+    .user-info strong { display: block; font-size: 1.1rem; }
+  </style>
+</head>
+<body>
+
+  <h1>Search Users</h1>
+  <input type="text" id="searchInput" placeholder="Search by username..." />
+
+  <div id="resultsContainer"></div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import {
+      getFirestore,
+      collection,
+      query,
+      where,
+      getDocs,
+      orderBy,
+      limit
+    } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAzJdwswNquD0j1HrM-UzlfRr59q4KUxx4",
+      authDomain: "novagg-5bd3a.firebaseapp.com",
+      projectId: "novagg-5bd3a",
+      storageBucket: "novagg-5bd3a.appspot.com",
+      messagingSenderId: "672962665712",
+      appId: "1:672962665712:web:4ed2f4a3c858ef9beeb635",
+      measurementId: "G-0P30E7HKZN"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    const searchInput = document.getElementById("searchInput");
+    const resultsContainer = document.getElementById("resultsContainer");
+
+    searchInput.addEventListener("input", async () => {
+      const searchTerm = searchInput.value.trim().toLowerCase();
+      resultsContainer.innerHTML = "";
+
+      if (searchTerm.length < 2) return;
+
+      const q = query(
+        collection(db, "users"),
+        where("username", ">=", searchTerm),
+        where("username", "<=", searchTerm + "\uf8ff"),
+        orderBy("username"),
+        limit(10)
+      );
+
+      const snapshot = await getDocs(q);
+
+      if (snapshot.empty) {
+        resultsContainer.innerHTML = "<p>No users found.</p>";
+        return;
+      }
+
+      snapshot.forEach(doc => {
+        const user = doc.data();
+        const card = document.createElement("div");
+        card.classList.add("user-card");
+
+        card.innerHTML = `
+          <img src="${user.profilePic || 'https://via.placeholder.com/50'}" alt="Profile Picture" />
+          <div class="user-info">
+            <strong>${user.username}</strong>
+            <span>${user.email || 'No email provided'}</span>
+          </div>
+        `;
+
+        resultsContainer.appendChild(card);
+      });
+    });
+  </script>
+</body>
+</html>
