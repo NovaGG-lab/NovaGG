@@ -116,7 +116,6 @@
     display: flex;
     flex-grow: 1;
   }
-  /* Style for create game form */
   #createGameForm input[type="text"],
   #createGameForm textarea,
   #createGameForm input[type="file"],
@@ -152,311 +151,38 @@
   #logoutBtn:hover {
     background:#c00;
   }
+  .users-button {
+    background: #0af;
+    color: #fff;
+    font-weight: bold;
+    padding: 8px 12px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    width: 100%;
+    margin-top: 10px;
+  }
+  .users-button:hover {
+    background: #08c;
+  }
 </style>
 </head>
 <body>
-
-<header>
-  <div id="topTabs">
-    <button class="tab-button" id="settingsBtn">Settings</button>
-    <div class="dropdown-content" id="settingsDropdown">
-      <h3>Settings</h3>
-      <form id="settingsForm">
-        <label>Change Username:</label>
-        <input type="text" id="newUsername" placeholder="New Username" minlength="3" maxlength="20" />
-        <label>Change Email:</label>
-        <input type="email" id="newEmail" placeholder="New Email" />
-        <label>Change Password:</label>
-        <input type="password" id="newPassword" placeholder="New Password" minlength="6" />
-        <button type="submit">Update Settings</button>
-      </form>
-      <hr />
-      <button id="logoutBtn">Log Out</button>
-      <p id="settingsStatus" style="color:#0f0; margin-top: 10px;"></p>
-    </div>
-
-    <button class="tab-button" id="viewProfileBtn">View Profile</button>
-    <div class="dropdown-content" id="viewProfileDropdown" style="max-width: 320px;">
-      <h3>Your Profile</h3>
-      <img id="profilePic" src="https://via.placeholder.com/100" alt="Profile Picture" style="border-radius: 50%; width: 100px; height: 100px;" />
-      <p><strong>Username:</strong> <span id="profileUsername">Loading...</span></p>
-      <p><strong>Email:</strong> <span id="profileEmail">Loading...</span></p>
-      <p><strong>Games Created:</strong> <span id="profileGamesCount">0</span></p>
-    </div>
-
-    <button class="tab-button" id="createGameBtn">Create Game</button>
-    <div class="dropdown-content" id="createGameDropdown">
-      <form id="createGameForm">
-        <label>Game Name</label><br />
-        <input type="text" id="gameName" placeholder="Game Name" required minlength="1" maxlength="50" /><br />
-        <label>Game Description</label><br />
-        <textarea id="gameDesc" placeholder="Game Description" required rows="3" maxlength="300"></textarea><br />
-        <label>Game Icon (Max 800x800)</label><br />
-        <input type="file" id="gameIcon" accept="image/*" required /><br />
-        <button type="submit">Create Game</button>
-      </form>
-    </div>
+  <!-- ... rest of the body ... -->
+  <div class="dropdown-content" id="viewProfileDropdown" style="max-width: 320px;">
+    <h3>Your Profile</h3>
+    <img id="profilePic" src="https://via.placeholder.com/100" alt="Profile Picture" style="border-radius: 50%; width: 100px; height: 100px;" />
+    <p><strong>Username:</strong> <span id="profileUsername">Loading...</span></p>
+    <p><strong>Email:</strong> <span id="profileEmail">Loading...</span></p>
+    <p><strong>Games Created:</strong> <span id="profileGamesCount">0</span></p>
+    <button id="goToUsersBtn" class="users-button">View All Users</button>
   </div>
-
-  <div id="userProfile" title="Your profile">
-    <img id="userPFP" src="https://via.placeholder.com/40" alt="User profile picture" />
-    <span id="usernameDisplay">Loading...</span>
-  </div>
-</header>
-
-<main class="content">
-  <section id="gamesList">
-    <h2>Games</h2>
-  </section>
-
-  <section id="gameDetails" style="flex-grow:1; padding: 20px; margin: 20px; background:#111; border-radius: 12px; overflow-y:auto;">
-    <h2>Select a game to view details</h2>
-  </section>
-</main>
-
-<footer>
-  NovaGG Studio &copy; 2025
-</footer>
 
 <script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-  import {
-    getAuth,
-    onAuthStateChanged,
-    signOut,
-    updateProfile,
-    updateEmail,
-    updatePassword
-  } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-  import {
-    getFirestore,
-    collection,
-    addDoc,
-    query,
-    where,
-    getDocs,
-    doc,
-    deleteDoc,
-    serverTimestamp,
-    getDoc,
-    setDoc
-  } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-
-  const firebaseConfig = {
-    apiKey: "AIzaSyAzJdwswNquD0j1HrM-UzlfRr59q4KUxx4",
-    authDomain: "novagg-5bd3a.firebaseapp.com",
-    projectId: "novagg-5bd3a",
-    storageBucket: "novagg-5bd3a.appspot.com",
-    messagingSenderId: "672962665712",
-    appId: "1:672962665712:web:4ed2f4a3c858ef9beeb635",
-    measurementId: "G-0P30E7HKZN"
-  };
-
-  const app = initializeApp(firebaseConfig);
-  const auth = getAuth(app);
-  const db = getFirestore(app);
-
-  let currentUser;
-
-  // Tab dropdown toggle logic (only one open at a time)
-  const tabs = document.querySelectorAll(".tab-button");
-  tabs.forEach(tab => {
-    tab.addEventListener("click", () => {
-      const isActive = tab.classList.contains("active");
-      tabs.forEach(t => t.classList.remove("active"));
-      document.querySelectorAll(".dropdown-content").forEach(d => d.style.display = "none");
-      if (!isActive) {
-        tab.classList.add("active");
-        tab.nextElementSibling.style.display = "block";
-      }
-    });
-  });
-
-  onAuthStateChanged(auth, async (user) => {
-    if (user && user.emailVerified) {
-      currentUser = user;
-
-      // Get username from Firestore or fallback
-      const userDoc = await getDoc(doc(db, "users", user.uid));
-      let username = user.displayName;
-      if (userDoc.exists() && userDoc.data().username) {
-        username = userDoc.data().username;
-      }
-
-      // Update header
-      document.getElementById("usernameDisplay").textContent = username || user.email;
-      document.getElementById("userPFP").src = user.photoURL || "https://via.placeholder.com/40";
-
-      // Load profile info in dropdown
-      document.getElementById("profileUsername").textContent = username || "Unknown";
-      document.getElementById("profileEmail").textContent = user.email;
-
-      // Count games created by user
-      const qGames = query(collection(db, "games"), where("creatorUID", "==", user.uid));
-      const gamesSnapshot = await getDocs(qGames);
-      document.getElementById("profileGamesCount").textContent = gamesSnapshot.size;
-
-      loadGames();
-    } else {
-      window.location.href = "login.html";
-    }
-  });
-
-  async function loadGames() {
-    const gamesList = document.getElementById("gamesList");
-    const gameDetails = document.getElementById("gameDetails");
-    [...gamesList.querySelectorAll('.game-item')].forEach(n => n.remove());
-
-    const q = query(collection(db, "games"), where("show", "==", true));
-    const querySnapshot = await getDocs(q);
-
-    querySnapshot.forEach(docSnap => {
-      const game = docSnap.data();
-      const gameItem = document.createElement("div");
-      gameItem.classList.add("game-item");
-      gameItem.innerHTML = `
-        <img src="${game.icon}" alt="${game.name} Icon" class="game-icon" />
-        <div>
-          <div class="game-name">${game.name}</div>
-          <small>By: ${game.creatorName}</small>
-        </div>
-      `;
-      gameItem.addEventListener("click", () => {
-        gameDetails.innerHTML = `
-          <h2>${game.name}</h2>
-          <p>${game.desc}</p>
-          <p><strong>Created by:</strong> ${game.creatorName}</p>
-        `;
-
-        if (currentUser.uid === game.creatorUID) {
-          const deleteBtn = document.createElement("button");
-          deleteBtn.textContent = "Delete Game";
-          deleteBtn.style.marginTop = "10px";
-          deleteBtn.addEventListener("click", async () => {
-            await deleteDoc(doc(db, "games", docSnap.id));
-            alert("Game deleted.");
-            loadGames();
-            gameDetails.innerHTML = "<h2>Select a game to view details</h2>";
-          });
-          gameDetails.appendChild(deleteBtn);
-        }
-      });
-
-      gamesList.appendChild(gameItem);
-    });
-  }
-
-  // Create Game Form
-  document.getElementById("createGameForm").addEventListener("submit", async (e) => {
-    e.preventDefault();
-
-    const name = document.getElementById("gameName").value.trim();
-    const desc = document.getElementById("gameDesc").value.trim();
-    const iconFileInput = document.getElementById("gameIcon");
-    const iconFile = iconFileInput.files[0];
-
-    if (!currentUser) {
-      alert("User not logged in");
-      return;
-    }
-
-    if (!iconFile) {
-      alert("Please select an icon file.");
-      return;
-    }
-
-    // Validate icon max dimensions (max 800x800)
-    const img = new Image();
-    const fileReader = new FileReader();
-
-    fileReader.onload = function (event) {
-      img.src = event.target.result;
-    };
-
-    img.onload = async function () {
-      if (img.width > 800 || img.height > 800) {
-        alert("Icon must be at most 800x800 pixels.");
-        return;
-      }
-
-      const iconBase64 = img.src;
-
-      await addDoc(collection(db, "games"), {
-        name,
-        desc,
-        icon: iconBase64,
-        creatorUID: currentUser.uid,
-        creatorName: document.getElementById("usernameDisplay").textContent,
-        show: true,
-        createdAt: serverTimestamp()
-      });
-
-      alert("Game created!");
-      document.getElementById("createGameForm").reset();
-      loadGames();
-    };
-
-    fileReader.readAsDataURL(iconFile);
-  });
-
-  // Settings Form submission (update username, email, password)
-  document.getElementById("settingsForm").addEventListener("submit", async (e) => {
-    e.preventDefault();
-    if (!currentUser) return;
-
-    const newUsername = document.getElementById("newUsername").value.trim();
-    const newEmail = document.getElementById("newEmail").value.trim();
-    const newPassword = document.getElementById("newPassword").value.trim();
-    const status = document.getElementById("settingsStatus");
-    status.style.color = "#0f0";
-    status.textContent = "Updating...";
-
-    try {
-      // Update username (in Firestore users collection and Firebase profile)
-      if (newUsername.length >= 3) {
-        await updateProfile(currentUser, { displayName: newUsername });
-        await setDoc(doc(db, "users", currentUser.uid), { username: newUsername }, { merge: true });
-        document.getElementById("usernameDisplay").textContent = newUsername;
-        document.getElementById("profileUsername").textContent = newUsername;
-      }
-
-      // Update email
-      if (newEmail) {
-        await updateEmail(currentUser, newEmail);
-        document.getElementById("profileEmail").textContent = newEmail;
-      }
-
-      // Update password
-      if (newPassword.length >= 6) {
-        await updatePassword(currentUser, newPassword);
-      }
-
-      status.textContent = "Settings updated successfully.";
-      e.target.reset();
-
-    } catch (err) {
-      console.error(err);
-      status.style.color = "#f00";
-      status.textContent = "Error: " + err.message;
-    }
-  });
-
-  // Logout button
-  document.getElementById("logoutBtn").addEventListener("click", async () => {
-    if (confirm("Sign out?")) {
-      await signOut(auth);
-      window.location.href = "login.html";
-    }
-  });
-
-  // Clicking user profile also signs out
-  document.getElementById("userProfile").addEventListener("click", async () => {
-    if (confirm("Sign out?")) {
-      await signOut(auth);
-      window.location.href = "login.html";
-    }
+  // ... existing script ...
+  document.getElementById("goToUsersBtn").addEventListener("click", () => {
+    window.location.href = "users.html";
   });
 </script>
-
 </body>
 </html>
