@@ -215,7 +215,7 @@
 </main>
 
 <footer>
-  NovaGG Studio &copy; 2025
+  NovaGG &copy; 2025
 </footer>
 
 <script type="module">
@@ -329,17 +329,80 @@
         `;
 
         if (currentUser.uid === game.creatorUID) {
-          const deleteBtn = document.createElement("button");
-          deleteBtn.textContent = "Delete Game";
-          deleteBtn.style.marginTop = "10px";
-          deleteBtn.addEventListener("click", async () => {
-            await deleteDoc(doc(db, "games", docSnap.id));
-            alert("Game deleted.");
-            loadGames();
-            gameDetails.innerHTML = "<h2>Select a game to view details</h2>";
-          });
-          gameDetails.appendChild(deleteBtn);
-        }
+  const deleteBtn = document.createElement("button");
+  deleteBtn.textContent = "Delete Game";
+  deleteBtn.style.marginRight = "10px";
+  deleteBtn.addEventListener("click", async () => {
+    await deleteDoc(doc(db, "games", docSnap.id));
+    alert("Game deleted.");
+    loadGames();
+    gameDetails.innerHTML = "<h2>Select a game to view details</h2>";
+  });
+
+  const editBtn = document.createElement("button");
+  editBtn.textContent = "Edit Game";
+  editBtn.addEventListener("click", () => {
+    gameDetails.innerHTML = `
+      <h2>Edit Game</h2>
+      <form id="editGameForm">
+        <label>Game Name</label><br />
+        <input type="text" id="editGameName" value="${game.name}" required maxlength="50" /><br />
+        <label>Game Description</label><br />
+        <textarea id="editGameDesc" rows="3" maxlength="300" required>${game.desc}</textarea><br />
+        <label>Change Icon (optional)</label><br />
+        <input type="file" id="editGameIcon" accept="image/*" /><br />
+        <button type="submit">Save Changes</button>
+      </form>
+    `;
+
+    document.getElementById("editGameForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const newName = document.getElementById("editGameName").value.trim();
+      const newDesc = document.getElementById("editGameDesc").value.trim();
+      const iconInput = document.getElementById("editGameIcon");
+      const newIconFile = iconInput.files[0];
+
+      let updateData = {
+        name: newName,
+        desc: newDesc,
+      };
+
+      if (newIconFile) {
+        const img = new Image();
+        const reader = new FileReader();
+
+        reader.onload = function (event) {
+          img.src = event.target.result;
+        };
+
+        img.onload = async function () {
+          if (img.width > 800 || img.height > 800) {
+            alert("Icon must be at most 800x800 pixels.");
+            return;
+          }
+          updateData.icon = img.src;
+          await updateGame(docSnap.id, updateData);
+        };
+
+        reader.readAsDataURL(newIconFile);
+      } else {
+        await updateGame(docSnap.id, updateData);
+      }
+
+      async function updateGame(docId, data) {
+        await setDoc(doc(db, "games", docId), data, { merge: true });
+        alert("Game updated!");
+        loadGames();
+        gameDetails.innerHTML = "<h2>Select a game to view details</h2>";
+      }
+    });
+  });
+
+  gameDetails.appendChild(deleteBtn);
+  gameDetails.appendChild(editBtn);
+}
+
       });
 
       gamesList.appendChild(gameItem);
