@@ -66,8 +66,8 @@
         status.textContent = "Login successful!";
         status.style.color = "#0f0";
 
-        // Redirect or perform additional actions here
-        // window.location.href = "dashboard.html";
+        // ✅ Redirect to home page
+        window.location.href = "home.html";
       } catch (error) {
         console.error("Login error:", error);
         status.textContent = "Error: " + error.message;
@@ -75,11 +75,11 @@
       }
     });
 
-    // Optional: auto redirect if already logged in
+    // ✅ Auto-redirect if already logged in and verified
     onAuthStateChanged(auth, (user) => {
       if (user && user.emailVerified) {
         console.log("User already logged in:", user.email);
-        // window.location.href = "dashboard.html";
+        window.location.href = "home.html";
       }
     });
   </script>
