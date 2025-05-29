@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NovaGG - Home</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem;
+      border-bottom: 1px solid #444;
+    }
+    .user-info {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+    .pfp {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background-color: #888;
+    }
+    .btn {
+      background: #fff;
+      color: #000;
+      font-weight: bold;
+      border: none;
+      border-radius: 6px;
+      padding: 0.5rem 1rem;
+      cursor: pointer;
+    }
+    .games {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 1rem;
+      padding: 1rem;
+    }
+    .game-card {
+      background: #111;
+      padding: 1rem;
+      border-radius: 8px;
+      text-align: center;
+      cursor: pointer;
+      transition: transform 0.3s;
+    }
+    .game-card:hover {
+      transform: scale(1.05);
+    }
+    .game-icon {
+      width: 64px;
+      height: 64px;
+      margin-bottom: 0.5rem;
+      border-radius: 8px;
+    }
+    .create-form {
+      display: none;
+      flex-direction: column;
+      gap: 0.75rem;
+      margin: 1rem;
+    }
+    .create-form input, .create-form textarea {
+      padding: 0.5rem;
+      border-radius: 4px;
+      border: 1px solid #333;
+    }
+    .show { display: flex; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="user-info">
+      <div class="pfp" id="pfp"></div>
+      <span id="username">Loading...</span>
+    </div>
+    <div>
+      <button class="btn" onclick="openSettings()">Settings</button>
+      <button class="btn" onclick="viewProfile()">View Profile</button>
+    </div>
+  </div>
+
+  <div style="padding: 1rem;">
+    <button class="btn" onclick="toggleCreateGameForm()">Create Game</button>
+    <div class="create-form" id="createGameForm">
+      <input type="text" id="gameIcon" placeholder="Game Icon URL" />
+      <input type="text" id="gameName" placeholder="Game Name" />
+      <textarea id="gameDesc" rows="3" placeholder="Game Description"></textarea>
+      <button class="btn" onclick="createGame()">Create Game</button>
+    </div>
+  </div>
+
+  <div class="games" id="gamesContainer">
+    <!-- Games will be listed here -->
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import {
+      getAuth,
+      onAuthStateChanged
+    } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+    import {
+      getFirestore,
+      collection,
+      addDoc,
+      getDocs,
+      doc,
+      getDoc
+    } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAzJdwswNquD0j1HrM-UzlfRr59q4KUxx4",
+      authDomain: "novagg-5bd3a.firebaseapp.com",
+      projectId: "novagg-5bd3a",
+      storageBucket: "novagg-5bd3a.appspot.com",
+      messagingSenderId: "672962665712",
+      appId: "1:672962665712:web:4ed2f4a3c858ef9beeb635",
+      measurementId: "G-0P30E7HKZN"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    onAuthStateChanged(auth, async (user) => {
+      if (!user) {
+        window.location.href = "login.html";
+        return;
+      }
+      const userDoc = await getDoc(doc(db, "users", user.uid));
+      document.getElementById("username").textContent = userDoc.exists() ? userDoc.data().username : user.email;
+      loadGames();
+    });
+
+    async function loadGames() {
+      const container = document.getElementById("gamesContainer");
+      container.innerHTML = "";
+      const querySnapshot = await getDocs(collection(db, "games"));
+      querySnapshot.forEach((doc) => {
+        const game = doc.data();
+        const div = document.createElement("div");
+        div.className = "game-card";
+        div.innerHTML = `
+          <img class="game-icon" src="${game.icon}" alt="icon" />
+          <h3>${game.name}</h3>
+          <p>${game.description}</p>
+        `;
+        div.onclick = () => alert(`Description:\n${game.description}`);
+        container.appendChild(div);
+      });
+    }
+
+    async function createGame() {
+      const icon = document.getElementById("gameIcon").value;
+      const name = document.getElementById("gameName").value;
+      const description = document.getElementById("gameDesc").value;
+      if (!name || !description || !icon) return;
+      await addDoc(collection(db, "games"), { icon, name, description });
+      toggleCreateGameForm();
+      loadGames();
+    }
+
+    function toggleCreateGameForm() {
+      const form = document.getElementById("createGameForm");
+      form.classList.toggle("show");
+    }
+
+    function openSettings() {
+      alert("Settings page coming soon!");
+    }
+
+    function viewProfile() {
+      alert("View profile feature coming soon!");
+    }
+  </script>
+</body>
+</html>
