@@ -4,94 +4,22 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>NovaGG - Register</title>
-  <style>
-    /* Simple black & white animated style */
-    body {
-      background: #000;
-      color: #fff;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      margin: 0;
-      overflow: hidden;
-      animation: fadeInBody 1.5s ease forwards;
-    }
-    @keyframes fadeInBody {
-      from {opacity: 0;}
-      to {opacity: 1;}
-    }
-    .container {
-      background: #111;
-      padding: 30px 40px;
-      border-radius: 12px;
-      box-shadow: 0 0 20px #555;
-      width: 320px;
-      text-align: center;
-      animation: slideInUp 1s ease forwards;
-    }
-    @keyframes slideInUp {
-      from {transform: translateY(50px); opacity: 0;}
-      to {transform: translateY(0); opacity: 1;}
-    }
-    h1 {
-      margin-bottom: 24px;
-      font-weight: 700;
-      letter-spacing: 0.05em;
-      text-transform: uppercase;
-    }
-    input {
-      width: 100%;
-      padding: 12px 15px;
-      margin: 12px 0;
-      border: none;
-      border-radius: 8px;
-      background: #222;
-      color: #eee;
-      font-size: 1rem;
-      transition: background 0.3s ease;
-    }
-    input:focus {
-      outline: none;
-      background: #333;
-      box-shadow: 0 0 8px #0f0;
-    }
-    button {
-      width: 100%;
-      padding: 14px 0;
-      background: #0f0;
-      border: none;
-      border-radius: 8px;
-      font-weight: 700;
-      font-size: 1rem;
-      color: #000;
-      cursor: pointer;
-      transition: background 0.3s ease;
-      margin-top: 10px;
-    }
-    button:hover {
-      background: #0c0;
-    }
-    .status {
-      margin-top: 18px;
-      font-weight: 600;
-      min-height: 24px;
-      transition: color 0.4s ease;
-      letter-spacing: 0.02em;
-    }
-  </style>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <div class="container">
     <h1>Create Your NovaGG Account</h1>
-    <form id="registerForm" autocomplete="off">
+    <form id="registerForm" autocomplete="off" class="form">
       <input type="text" id="username" placeholder="Username" required minlength="3" maxlength="20" />
       <input type="email" id="email" placeholder="Email" required />
       <input type="password" id="password" placeholder="Password" required minlength="6" />
       <button type="submit">Register</button>
     </form>
     <p id="statusMessage" class="status"></p>
+    <p style="margin-top: 1rem;">
+      or if you have an account,
+      <a href="login.html" style="color: #fff; text-decoration: underline;">log in</a>
+    </p>
   </div>
 
   <script type="module">
@@ -142,29 +70,21 @@
       }
 
       try {
-        console.log("Creating user...");
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         const user = userCredential.user;
-        console.log("User created:", user.uid);
 
-        console.log("Saving user data...");
         await setDoc(doc(db, "users", user.uid), {
           username,
           email,
           createdAt: serverTimestamp(),
         });
-        console.log("User data saved.");
 
-        console.log("Sending verification email...");
         await sendEmailVerification(user);
-        console.log("Verification email sent.");
 
         status.textContent = "Success! Check your email to verify your account.";
         status.style.color = "#0f0";
-
         form.reset();
       } catch (error) {
-        console.error("Registration error:", error);
         status.textContent = "Error: " + error.message;
         status.style.color = "#f00";
       }
