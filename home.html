@@ -168,7 +168,29 @@
 </style>
 </head>
 <body>
-  <!-- ... rest of the body ... -->
+  <header>
+    <div id="topTabs">
+      <button class="tab-button">Games</button>
+      <button class="tab-button">Create Game</button>
+      <button class="tab-button">Settings</button>
+    </div>
+    <div id="userProfile">
+      <img src="https://via.placeholder.com/40" alt="User Avatar" />
+      <span>Username</span>
+    </div>
+  </header>
+
+  <main class="content">
+    <section id="gamesList">
+      <h2>Games</h2>
+      <!-- Game items will go here -->
+    </section>
+  </main>
+
+  <footer>
+    &copy; 2025 NovaGG. All rights reserved.
+  </footer>
+
   <div class="dropdown-content" id="viewProfileDropdown" style="max-width: 320px;">
     <h3>Your Profile</h3>
     <img id="profilePic" src="https://via.placeholder.com/100" alt="Profile Picture" style="border-radius: 50%; width: 100px; height: 100px;" />
@@ -178,11 +200,10 @@
     <button id="goToUsersBtn" class="users-button">View All Users</button>
   </div>
 
-<script type="module">
-  // ... existing script ...
-  document.getElementById("goToUsersBtn").addEventListener("click", () => {
-    window.location.href = "users.html";
-  });
-</script>
+  <script type="module">
+    document.getElementById("goToUsersBtn").addEventListener("click", () => {
+      window.location.href = "users.html";
+    });
+  </script>
 </body>
 </html>
