@@ -1,186 +1,373 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>NovaGG Home</title>
-  <link rel="stylesheet" href="style.css" />
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>NovaGG - Home</title>
+<style>
+  body {
+    margin: 0; padding: 0;
+    font-family: 'Segoe UI', sans-serif;
+    background: #000; color: #fff;
+    display: flex; flex-direction: column; height: 100vh;
+  }
+  header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 20px;
+    background: #111;
+    height: 60px;
+    position: relative;
+    z-index: 10;
+  }
+  #topTabs {
+    display: flex;
+    gap: 20px;
+  }
+  .tab-button {
+    position: relative;
+    background: #222;
+    border: none;
+    color: #fff;
+    padding: 8px 16px;
+    cursor: pointer;
+    border-radius: 8px 8px 0 0;
+    font-weight: bold;
+  }
+  .tab-button:hover {
+    background: #444;
+  }
+  .dropdown-content {
+    display: none;
+    position: absolute;
+    top: 100%; left: 0;
+    background: #222;
+    min-width: 250px;
+    padding: 15px;
+    border-radius: 0 0 8px 8px;
+    box-shadow: 0 5px 10px rgba(0,0,0,0.7);
+    z-index: 20;
+  }
+  .tab-button.active + .dropdown-content {
+    display: block;
+  }
+  #userProfile {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+  }
+  #userProfile img {
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    border: 2px solid #0f0;
+  }
+  #userProfile span {
+    font-weight: 700;
+  }
+  #gamesList {
+    flex-grow: 1;
+    width: 250px;
+    background: #111;
+    overflow-y: auto;
+    padding: 20px;
+    margin: 20px;
+    border-radius: 12px;
+  }
+  #gamesList h2 {
+    margin-top: 0;
+    font-weight: 700;
+    border-bottom: 2px solid #0f0;
+    padding-bottom: 10px;
+  }
+  .game-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 8px;
+    background: #222;
+    margin-bottom: 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.3s ease;
+  }
+  .game-item:hover {
+    background: #0f0;
+    color: #000;
+  }
+  .game-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 8px;
+    object-fit: cover;
+  }
+  .game-name {
+    font-weight: 600;
+  }
+  footer {
+    text-align: center;
+    padding: 10px 0;
+    font-size: 0.9rem;
+    background: #111;
+    color: #666;
+  }
+  main.content {
+    display: flex;
+    flex-grow: 1;
+  }
+  /* Style for create game form */
+  #createGameForm input[type="text"],
+  #createGameForm textarea,
+  #createGameForm input[type="file"] {
+    width: 100%;
+    margin-bottom: 10px;
+    padding: 6px 8px;
+    border-radius: 4px;
+    border: none;
+    font-size: 1rem;
+  }
+  #createGameForm button {
+    background: #0f0;
+    color: #000;
+    font-weight: bold;
+    padding: 8px 12px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+  #createGameForm button:hover {
+    background: #0c0;
+  }
+</style>
 </head>
 <body>
 
-  <header>
-    <h1>Welcome, <span id="usernameDisplay"></span>!</h1>
-    <img id="userPFP" width="40" height="40" />
-  </header>
+<header>
+  <div id="topTabs">
+    <button class="tab-button" id="settingsBtn">Settings</button>
+    <div class="dropdown-content" id="settingsDropdown">
+      <p><strong>Settings Content Here</strong></p>
+    </div>
 
-  <section class="create-game-section">
-    <h2>Create a Game</h2>
-    <form id="createGameForm">
-      <label for="gameName">Game Name</label><br />
-      <input type="text" id="gameName" required /><br /><br />
+    <button class="tab-button" id="viewProfileBtn">View Profile</button>
+    <div class="dropdown-content" id="viewProfileDropdown">
+      <p><strong>Profile Content Here</strong></p>
+    </div>
 
-      <label for="gameDesc">Game Description</label><br />
-      <textarea id="gameDesc" required></textarea><br /><br />
+    <button class="tab-button" id="createGameBtn">Create Game</button>
+    <div class="dropdown-content" id="createGameDropdown">
+      <form id="createGameForm">
+        <label>Game Name</label><br />
+        <input type="text" id="gameName" placeholder="Game Name" required minlength="1" maxlength="50" /><br />
+        <label>Game Description</label><br />
+        <textarea id="gameDesc" placeholder="Game Description" required rows="3" maxlength="300"></textarea><br />
+        <label>Game Icon (Max 800x800)</label><br />
+        <input type="file" id="gameIcon" accept="image/*" required /><br />
+        <button type="submit">Create Game</button>
+      </form>
+    </div>
+  </div>
 
-      <label for="gameIconFile">Game Icon (Max 800x800)</label><br />
-      <input type="file" id="gameIconFile" accept="image/*" required /><br /><br />
+  <div id="userProfile" title="Your profile">
+    <img id="userPFP" src="https://via.placeholder.com/40" alt="User profile picture" />
+    <span id="usernameDisplay">Loading...</span>
+  </div>
+</header>
 
-      <button type="submit">Create Game</button>
-    </form>
-  </section>
-
-  <hr />
-
-  <section class="games-section">
+<main class="content">
+  <section id="gamesList">
     <h2>Games</h2>
-    <div id="gamesList"></div>
-    <div id="gameDetails"></div>
   </section>
 
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-    import {
-      getAuth,
-      onAuthStateChanged
-    } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-    import {
-      getFirestore,
-      collection,
-      addDoc,
-      query,
-      where,
-      getDocs,
-      doc,
-      deleteDoc,
-      serverTimestamp
-    } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-    import {
-      getStorage,
-      ref,
-      uploadBytes,
-      getDownloadURL
-    } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
+  <section id="gameDetails" style="flex-grow:1; padding: 20px; margin: 20px; background:#111; border-radius: 12px; overflow-y:auto;">
+    <h2>Select a game to view details</h2>
+  </section>
+</main>
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyAzJdwswNquD0j1HrM-UzlfRr59q4KUxx4",
-      authDomain: "novagg-5bd3a.firebaseapp.com",
-      projectId: "novagg-5bd3a",
-      storageBucket: "novagg-5bd3a.appspot.com",
-      messagingSenderId: "672962665712",
-      appId: "1:672962665712:web:4ed2f4a3c858ef9beeb635",
-      measurementId: "G-0P30E7HKZN"
-    };
+<footer>
+  NovaGG Studio &copy; 2025
+</footer>
 
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db = getFirestore(app);
-    const storage = getStorage(app);
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import {
+    getAuth,
+    onAuthStateChanged,
+    signOut
+  } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+  import {
+    getFirestore,
+    collection,
+    addDoc,
+    query,
+    where,
+    getDocs,
+    doc,
+    deleteDoc,
+    serverTimestamp,
+    getDoc,
+  } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-    let currentUser;
+  const firebaseConfig = {
+    apiKey: "AIzaSyAzJdwswNquD0j1HrM-UzlfRr59q4KUxx4",
+    authDomain: "novagg-5bd3a.firebaseapp.com",
+    projectId: "novagg-5bd3a",
+    storageBucket: "novagg-5bd3a.appspot.com",
+    messagingSenderId: "672962665712",
+    appId: "1:672962665712:web:4ed2f4a3c858ef9beeb635",
+    measurementId: "G-0P30E7HKZN"
+  };
 
-    onAuthStateChanged(auth, async (user) => {
-      if (user && user.emailVerified) {
-        currentUser = user;
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
 
-        // Set display name or fallback to email
-        document.getElementById("usernameDisplay").textContent =
-          user.displayName && user.displayName !== "" ? user.displayName : user.email;
+  let currentUser;
 
-        document.getElementById("userPFP").src =
-          user.photoURL || "https://via.placeholder.com/40";
+  onAuthStateChanged(auth, async (user) => {
+    if (user && user.emailVerified) {
+      currentUser = user;
 
-        loadGames();
-      } else {
-        window.location.href = "login.html";
+      // Get username from Firestore
+      const userDoc = await getDoc(doc(db, "users", user.uid));
+      let username = user.displayName;
+      if (userDoc.exists() && userDoc.data().username) {
+        username = userDoc.data().username;
       }
-    });
 
-    async function loadGames() {
-      const gamesList = document.getElementById("gamesList");
-      const gameDetails = document.getElementById("gameDetails");
-      gamesList.innerHTML = "";
-      gameDetails.innerHTML = "";
+      document.getElementById("usernameDisplay").textContent = username || user.email;
+      document.getElementById("userPFP").src = user.photoURL || "https://via.placeholder.com/40";
 
-      const q = query(collection(db, "games"), where("show", "==", true));
-      const querySnapshot = await getDocs(q);
+      loadGames();
+    } else {
+      window.location.href = "login.html";
+    }
+  });
 
-      querySnapshot.forEach(docSnap => {
-        const game = docSnap.data();
-        const gameItem = document.createElement("div");
-        gameItem.classList.add("game-item");
-        gameItem.innerHTML = `
-          <div style="display: flex; align-items: center;">
-            <img src="${game.icon}" alt="${game.name} Icon" class="game-icon" />
-            <div>
-              <strong>${game.name}</strong><br />
-              <small>By: ${game.creatorName}</small>
-            </div>
-          </div>
+  // Game loading and display
+  async function loadGames() {
+    const gamesList = document.getElementById("gamesList");
+    const gameDetails = document.getElementById("gameDetails");
+    // Clear old games (except heading)
+    [...gamesList.querySelectorAll('.game-item')].forEach(n => n.remove());
+
+    const q = query(collection(db, "games"), where("show", "==", true));
+    const querySnapshot = await getDocs(q);
+
+    querySnapshot.forEach(docSnap => {
+      const game = docSnap.data();
+      const gameItem = document.createElement("div");
+      gameItem.classList.add("game-item");
+      gameItem.innerHTML = `
+        <img src="${game.icon}" alt="${game.name} Icon" class="game-icon" />
+        <div>
+          <div class="game-name">${game.name}</div>
+          <small>By: ${game.creatorName}</small>
+        </div>
+      `;
+      gameItem.addEventListener("click", () => {
+        gameDetails.innerHTML = `
+          <h2>${game.name}</h2>
+          <p>${game.desc}</p>
+          <p><strong>Created by:</strong> ${game.creatorName}</p>
         `;
 
-        gameItem.addEventListener("click", () => {
-          gameDetails.innerHTML = `
-            <h3>${game.name}</h3>
-            <p>${game.desc}</p>
-            <p><strong>Created by:</strong> ${game.creatorName}</p>
-          `;
-
-          if (currentUser.uid === game.creatorUID) {
-            const deleteBtn = document.createElement("button");
-            deleteBtn.textContent = "Delete Game";
-            deleteBtn.addEventListener("click", async () => {
-              await deleteDoc(doc(db, "games", docSnap.id));
-              alert("Game deleted.");
-              loadGames();
-              gameDetails.innerHTML = "";
-            });
-            gameDetails.appendChild(deleteBtn);
-          }
-        });
-
-        gamesList.appendChild(gameItem);
+        if (currentUser.uid === game.creatorUID) {
+          const deleteBtn = document.createElement("button");
+          deleteBtn.textContent = "Delete Game";
+          deleteBtn.style.marginTop = "10px";
+          deleteBtn.addEventListener("click", async () => {
+            await deleteDoc(doc(db, "games", docSnap.id));
+            alert("Game deleted.");
+            loadGames();
+            gameDetails.innerHTML = "<h2>Select a game to view details</h2>";
+          });
+          gameDetails.appendChild(deleteBtn);
+        }
       });
+
+      gamesList.appendChild(gameItem);
+    });
+  }
+
+  // Create Game Form
+  document.getElementById("createGameForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const name = document.getElementById("gameName").value.trim();
+    const desc = document.getElementById("gameDesc").value.trim();
+    const iconFileInput = document.getElementById("gameIcon");
+    const iconFile = iconFileInput.files[0];
+
+    if (!currentUser) {
+      alert("User not logged in");
+      return;
     }
 
-    document.getElementById("createGameForm").addEventListener("submit", async (e) => {
-      e.preventDefault();
+    if (!iconFile) {
+      alert("Please select an icon file.");
+      return;
+    }
 
-      const name = document.getElementById("gameName").value.trim();
-      const desc = document.getElementById("gameDesc").value.trim();
-      const file = document.getElementById("gameIconFile").files[0];
+    // Validate icon max dimensions (max 800x800)
+    const img = new Image();
+    const fileReader = new FileReader();
 
-      if (!file || !currentUser) {
-        alert("Missing file or not logged in.");
+    fileReader.onload = function (event) {
+      img.src = event.target.result;
+    };
+
+    img.onload = async function () {
+      if (img.width > 800 || img.height > 800) {
+        alert("Icon must be at most 800x800 pixels.");
         return;
       }
 
-      const img = new Image();
-      img.src = URL.createObjectURL(file);
+      // For simplicity: We'll convert image to base64 and store that string as "icon"
+      // (For production, better upload to Firebase Storage and save URL)
+      const iconBase64 = img.src;
 
-      img.onload = async () => {
-        if (img.width > 800 || img.height > 800) {
-          alert("Image must be 800x800 or smaller.");
-          return;
-        }
+      await addDoc(collection(db, "games"), {
+        name,
+        desc,
+        icon: iconBase64,
+        creatorUID: currentUser.uid,
+        creatorName: document.getElementById("usernameDisplay").textContent,
+        show: true,
+        createdAt: serverTimestamp()
+      });
 
-        const iconRef = ref(storage, `gameIcons/${Date.now()}_${file.name}`);
-        await uploadBytes(iconRef, file);
-        const iconUrl = await getDownloadURL(iconRef);
+      alert("Game created!");
+      document.getElementById("createGameForm").reset();
+      loadGames();
+    };
 
-        await addDoc(collection(db, "games"), {
-          name,
-          desc,
-          icon: iconUrl,
-          creatorUID: currentUser.uid,
-          creatorName: currentUser.displayName || currentUser.email,
-          show: true,
-          createdAt: serverTimestamp()
-        });
+    fileReader.readAsDataURL(iconFile);
+  });
 
-        alert("Game created!");
-        document.getElementById("createGameForm").reset();
-        loadGames();
-      };
+  // Tabs dropdown logic
+  const tabs = document.querySelectorAll(".tab-button");
+  tabs.forEach(tab => {
+    tab.addEventListener("click", () => {
+      const isActive = tab.classList.contains("active");
+      tabs.forEach(t => t.classList.remove("active"));
+      document.querySelectorAll(".dropdown-content").forEach(d => d.style.display = "none");
+      if (!isActive) {
+        tab.classList.add("active");
+        tab.nextElementSibling.style.display = "block";
+      }
     });
-  </script>
+  });
+
+  // Optional: clicking user profile signs out
+  document.getElementById("userProfile").addEventListener("click", async () => {
+    if (confirm("Sign out?")) {
+      await signOut(auth);
+      window.location.href = "login.html";
+    }
+  });
+</script>
+
 </body>
 </html>
