@@ -1,3 +1,9 @@
+/* Base Layout */
+* {
+  box-sizing: border-box;
+  scroll-behavior: smooth;
+}
+
 body {
   margin: 0;
   font-family: 'Segoe UI', sans-serif;
@@ -6,54 +12,67 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 100vh;
-  overflow: hidden;
+  min-height: 100vh;
+  padding: 2rem;
+  overflow-x: hidden;
 }
 
+/* Container Style */
 .container {
+  background: #111;
+  padding: 2.5rem;
+  border-radius: 1rem;
+  box-shadow: 0 0 20px rgba(255, 255, 255, 0.08);
+  max-width: 400px;
+  width: 100%;
   text-align: center;
-  animation: fadeIn 2s ease-out;
+  animation: fadeIn 1.2s ease-in-out;
 }
 
+/* Headings */
 h1 {
-  font-size: 2.5rem;
-  margin-bottom: 2rem;
-  animation: slideDown 1s ease-in-out forwards;
+  font-size: 2rem;
+  margin-bottom: 1.5rem;
+  animation: slideDown 1s ease-in-out;
 }
 
+/* Form Styles */
 .form {
   display: flex;
   flex-direction: column;
-  gap: 1.2rem;
-  animation: slideUp 1.5s ease-in-out forwards;
-}
-
-input, button {
-  padding: 1rem;
-  border: none;
-  border-radius: 0.5rem;
-  font-size: 1rem;
-  transition: all 0.3s ease;
+  gap: 1rem;
+  animation: slideUp 1s ease-in-out;
 }
 
 input {
-  background: #111;
+  padding: 0.85rem;
+  border: none;
+  border-radius: 0.5rem;
+  background: #1a1a1a;
   color: #fff;
+  font-size: 1rem;
+  transition: 0.3s ease;
   border: 1px solid #333;
 }
 
 input:focus {
-  outline: none;
-  border-color: #fff;
   background: #222;
+  border-color: #fff;
+  outline: none;
+  box-shadow: 0 0 10px #fff2;
 }
 
+/* Button */
 button {
+  padding: 1rem;
+  border: none;
+  border-radius: 0.5rem;
   background: #fff;
   color: #000;
   font-weight: bold;
+  font-size: 1rem;
   cursor: pointer;
-  border: 1px solid #fff;
+  transition: transform 0.3s ease, background 0.3s ease;
 }
 
 button:hover {
@@ -63,9 +82,42 @@ button:hover {
   transform: scale(1.05);
 }
 
+button:active {
+  transform: scale(0.98);
+  background: #444;
+  color: #fff;
+}
+
+/* Link */
+a {
+  color: #fff;
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+a:hover {
+  color: #aaa;
+  text-decoration: underline;
+}
+
+/* Status Message */
 .status {
-  margin-top: 1.5rem;
+  margin-top: 1.2rem;
+  min-height: 1.5rem;
   font-weight: bold;
+  transition: color 0.4s ease;
+}
+
+/* Scroll Animation */
+.fade-in-on-scroll {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 1s ease, transform 1s ease;
+}
+
+.fade-in-on-scroll.visible {
+  opacity: 1;
+  transform: translateY(0);
 }
 
 /* Animations */
@@ -75,7 +127,7 @@ button:hover {
 }
 
 @keyframes slideUp {
-  from { transform: translateY(50px); opacity: 0; }
+  from { transform: translateY(40px); opacity: 0; }
   to { transform: translateY(0); opacity: 1; }
 }
 
