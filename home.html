@@ -1,47 +1,40 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>NovaGG Home</title>
-  <style>
-    body {
-      font-family: sans-serif;
-      padding: 20px;
-    }
-    .game-item {
-      margin: 10px 0;
-      border-bottom: 1px solid #ccc;
-      padding-bottom: 10px;
-    }
-    .game-icon {
-      width: 50px;
-      height: 50px;
-      object-fit: cover;
-      margin-right: 10px;
-    }
-  </style>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
 
-  <h1>Welcome, <span id="usernameDisplay"></span>!</h1>
-  <img id="userPFP" width="40" height="40" />
+  <header>
+    <h1>Welcome, <span id="usernameDisplay"></span>!</h1>
+    <img id="userPFP" width="40" height="40" />
+  </header>
+
+  <section class="create-game-section">
+    <h2>Create a Game</h2>
+    <form id="createGameForm">
+      <label for="gameName">Game Name</label><br />
+      <input type="text" id="gameName" required /><br /><br />
+
+      <label for="gameDesc">Game Description</label><br />
+      <textarea id="gameDesc" required></textarea><br /><br />
+
+      <label for="gameIconFile">Game Icon (Max 800x800)</label><br />
+      <input type="file" id="gameIconFile" accept="image/*" required /><br /><br />
+
+      <button type="submit">Create Game</button>
+    </form>
+  </section>
 
   <hr />
 
-  <h2>Create a Game</h2>
-  <form id="createGameForm">
-    <input type="text" id="gameName" placeholder="Game Name" required /><br /><br />
-    <textarea id="gameDesc" placeholder="Game Description" required></textarea><br /><br />
-    <label>Game Icon (Max 800x800):</label><br />
-    <input type="file" id="gameIconFile" accept="image/*" required /><br /><br />
-    <button type="submit">Create Game</button>
-  </form>
-
-  <hr />
-
-  <h2>Games</h2>
-  <div id="gamesList"></div>
-  <div id="gameDetails"></div>
+  <section class="games-section">
+    <h2>Games</h2>
+    <div id="gamesList"></div>
+    <div id="gameDetails"></div>
+  </section>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
@@ -87,8 +80,14 @@
     onAuthStateChanged(auth, async (user) => {
       if (user && user.emailVerified) {
         currentUser = user;
-        document.getElementById("usernameDisplay").textContent = user.displayName || user.email;
-        document.getElementById("userPFP").src = user.photoURL || "https://via.placeholder.com/40";
+
+        // Set display name or fallback to email
+        document.getElementById("usernameDisplay").textContent =
+          user.displayName && user.displayName !== "" ? user.displayName : user.email;
+
+        document.getElementById("userPFP").src =
+          user.photoURL || "https://via.placeholder.com/40";
+
         loadGames();
       } else {
         window.location.href = "login.html";
@@ -99,6 +98,7 @@
       const gamesList = document.getElementById("gamesList");
       const gameDetails = document.getElementById("gameDetails");
       gamesList.innerHTML = "";
+      gameDetails.innerHTML = "";
 
       const q = query(collection(db, "games"), where("show", "==", true));
       const querySnapshot = await getDocs(q);
@@ -182,6 +182,5 @@
       };
     });
   </script>
-
 </body>
 </html>
