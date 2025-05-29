@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>NovaGG Player</title>
+  <style>
+    body { margin: 0; overflow: hidden; }
+    canvas { display: block; }
+    #usernameTag {
+      position: absolute;
+      color: white;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.min.js"></script>
+  <script>
+    const socket = io("http://localhost:3000"); // Change to your server URL
+    let scene, camera, renderer;
+
+    const players = {};
+
+    function init() {
+      scene = new THREE.Scene();
+      camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+      renderer = new THREE.WebGLRenderer();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      document.body.appendChild(renderer.domElement);
+
+      // Add baseplate
+      const geometry = new THREE.BoxGeometry(100, 1, 100);
+      const material = new THREE.MeshBasicMaterial({ color: 0x555555 });
+      const baseplate = new THREE.Mesh(geometry, material);
+      baseplate.position.y = -0.5;
+      scene.add(baseplate);
+
+      camera.position.y = 2;
+      camera.position.z = 5;
+
+      animate();
+    }
+
+    function animate() {
+      requestAnimationFrame(animate);
+      renderer.render(scene, camera);
+    }
+
+    // Socket Events
+    socket.on("connect", () => {
+      const username = prompt("Enter your username:");
+      socket.emit("join", { username });
+    });
+
+    socket.on("playerData", (data) => {
+      data.forEach(({ id, username }) => {
+        if (!players[id]) {
+          const box = new THREE.Mesh(
+            new THREE.BoxGeometry(1, 2, 1),
+            new THREE.MeshBasicMaterial({ color: 0x00ff00 })
+          );
+          scene.add(box);
+          players[id] = { mesh: box, username };
+        }
+      });
+    });
+
+    socket.on("playerLeft", (id) => {
+      if (players[id]) {
+        scene.remove(players[id].mesh);
+        delete players[id];
+      }
+    });
+
+    window.addEventListener("beforeunload", () => {
+      socket.emit("leave");
+    });
+
+    init();
+  </script>
+</body>
+</html>
