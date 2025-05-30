@@ -51,7 +51,6 @@
     const messages = document.getElementById('messages');
     const input = document.getElementById('messageInput');
 
-    // Add message to chat
     function addMessage(msg) {
       const el = document.createElement('div');
       el.textContent = msg;
@@ -59,7 +58,6 @@
       messages.scrollTop = messages.scrollHeight;
     }
 
-    // Chat Input
     input.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' && input.value.trim()) {
         socket.emit('chat', input.value.trim());
@@ -77,7 +75,7 @@
 
     function init() {
       scene = new THREE.Scene();
-      scene.background = new THREE.Color(0x87ceeb); // blue sky
+      scene.background = new THREE.Color(0x87ceeb); // sky blue
 
       camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
       renderer = new THREE.WebGLRenderer();
@@ -193,20 +191,18 @@
     });
 
     socket.on("playerData", (data) => {
-  data.forEach(({ id, username, position }) => {
-    if (!players[id]) {
-      const { group, nameTag } = createPlayer(username);
-      scene.add(group);
-      players[id] = { group, nameTag, username };
-    }
+      data.forEach(({ id, username, position }) => {
+        if (!players[id]) {
+          const { group, nameTag } = createPlayer(username);
+          scene.add(group);
+          players[id] = { group, nameTag, username };
+        }
 
-    if (position) {
-      players[id].group.position.set(position.x, 0, position.z);
-    }
-  });
-});
-
-
+        if (position) {
+          players[id].group.position.set(position.x, 0, position.z);
+        }
+      });
+    });
 
     socket.on("playerMoved", ({ id, position }) => {
       if (players[id]) {
