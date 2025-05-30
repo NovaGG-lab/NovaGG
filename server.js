@@ -28,12 +28,14 @@ io.on("connection", (socket) => {
 });
 
 
-  socket.on("move", ({ x, z }) => {
-    if (players[socket.id]) {
-      players[socket.id].position = { x, z };
-      socket.broadcast.emit("playerMoved", { id: socket.id, position: { x, z } });
-    }
-  });
+  socket.on("move", ({ x, z, rotationY }) => {
+  if (players[socket.id]) {
+    players[socket.id].position = { x, z };
+    players[socket.id].rotationY = rotationY;
+    socket.broadcast.emit("playerMoved", { id: socket.id, position: { x, z }, rotationY });
+  }
+});
+
 
   socket.on("chat", (msg) => {
     const player = players[socket.id];
