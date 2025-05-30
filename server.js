@@ -1,10 +1,17 @@
 const express = require('express');
-const http = require('http');
+const app = express();
+const http = require('http').createServer(app);
+const io = require('socket.io')(http);
+
+const port = process.env.PORT || 3000;
+
+http.listen(port, '0.0.0.0', () => {
+  console.log(`Server running on port ${port}`);
+});
+
 const { Server } = require('socket.io');
 
-const app = express();
 const server = http.createServer(app);
-const io = new Server(server, { cors: { origin: "*" } });
 
 const players = {};
 const bannedWords = ['fuck', 'shit', 'bitch', 'ass'];
