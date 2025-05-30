@@ -18,13 +18,15 @@ io.on("connection", (socket) => {
   console.log("User connected", socket.id);
 
   socket.on("join", ({ username }) => {
-    players[socket.id] = {
-      id: socket.id,
-      username,
-      position: { x: 0, z: 0 },
-    };
-    io.emit("playerData", Object.values(players));
-  });
+  players[socket.id] = {
+    id: socket.id,
+    username,
+    position: { x: 0, z: 0 },
+  };
+  io.emit("playerData", Object.values(players));
+  io.emit("system", `${username} joined the game!`);
+});
+
 
   socket.on("move", ({ x, z }) => {
     if (players[socket.id]) {
