@@ -16,15 +16,18 @@
       max-width: 300px;
       color: white;
     }
+
     #messages {
       max-height: 150px;
       overflow-y: auto;
       font-size: 14px;
     }
+
     #messageInput {
       width: 100%;
       border: none;
       padding: 5px;
+      box-sizing: border-box;
     }
   </style>
 </head>
@@ -44,25 +47,32 @@
     let myId = null;
     let isFirstPerson = true;
     const players = {};
-
     const keys = {};
-    let velocity = { x: 0, z: 0 };
+    const messages = document.getElementById('messages');
+    const input = document.getElementById('messageInput');
 
-    const chatBox = document.getElementById('messages');
-    const messageInput = document.getElementById('messageInput');
+    // Add message to chat
+    function addMessage(msg) {
+      const el = document.createElement('div');
+      el.textContent = msg;
+      messages.appendChild(el);
+      messages.scrollTop = messages.scrollHeight;
+    }
 
-    messageInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' && messageInput.value.trim()) {
-        socket.emit('chat', messageInput.value.trim());
-        messageInput.value = '';
+    // Chat Input
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && input.value.trim()) {
+        socket.emit('chat', input.value.trim());
+        input.value = '';
       }
     });
 
     socket.on('chat', ({ username, message }) => {
-      const el = document.createElement('div');
-      el.textContent = `${username}: ${message}`;
-      chatBox.appendChild(el);
-      chatBox.scrollTop = chatBox.scrollHeight;
+      addMessage(`${username}: ${message}`);
+    });
+
+    socket.on('system', (message) => {
+      addMessage(`[SYSTEM] ${message}`);
     });
 
     function init() {
@@ -75,10 +85,9 @@
       document.body.appendChild(renderer.domElement);
 
       // Baseplate
-      const ground = new THREE.Mesh(
-        new THREE.BoxGeometry(100, 1, 100),
-        new THREE.MeshBasicMaterial({ color: 0x444444 })
-      );
+      const groundGeo = new THREE.BoxGeometry(100, 1, 100);
+      const groundMat = new THREE.MeshBasicMaterial({ color: 0x444444 });
+      const ground = new THREE.Mesh(groundGeo, groundMat);
       ground.position.y = -0.5;
       scene.add(ground);
 
@@ -91,15 +100,10 @@
         }
       });
 
-      document.addEventListener('mousemove', (event) => {
+      document.addEventListener('mousemove', (e) => {
         if (document.pointerLockElement === renderer.domElement && myId && players[myId]) {
-          const me = players[myId];
-          me.group.rotation.y -= event.movementX * 0.002;
+          players[myId].group.rotation.y -= e.movementX * 0.002;
         }
-      });
-
-      window.addEventListener('keydown', (e) => {
-        if (e.key === 'v') isFirstPerson = !isFirstPerson;
       });
 
       animate();
@@ -127,6 +131,7 @@
 
       group.add(body);
       group.add(head);
+
       return { group, nameTag, username };
     }
 
@@ -165,16 +170,14 @@
 
       if (myId && players[myId]) {
         const me = players[myId];
-        const eye = me.group.position.clone();
-        eye.y += 1;
-
+        const eye = me.group.position.clone().add(new THREE.Vector3(0, 1.2, 0));
         if (isFirstPerson) {
           camera.position.copy(eye);
-          const lookDir = new THREE.Vector3(0, 0, -1).applyAxisAngle(new THREE.Vector3(0, 1, 0), me.group.rotation.y);
-          camera.lookAt(eye.clone().add(lookDir));
+          const dir = new THREE.Vector3(0, 0, -1).applyAxisAngle(new THREE.Vector3(0, 1, 0), me.group.rotation.y);
+          camera.lookAt(eye.clone().add(dir));
         } else {
-          const back = new THREE.Vector3(0, 0, 5).applyAxisAngle(new THREE.Vector3(0, 1, 0), me.group.rotation.y);
-          camera.position.copy(eye.clone().add(back));
+          const offset = new THREE.Vector3(0, 2, 5).applyAxisAngle(new THREE.Vector3(0, 1, 0), me.group.rotation.y);
+          camera.position.copy(eye.clone().add(offset));
           camera.lookAt(eye);
         }
       }
@@ -183,9 +186,8 @@
       updateNameTags();
     }
 
-    // Socket Events
     socket.on("connect", () => {
-      const username = prompt("Enter username:");
+      const username = prompt("Enter your username:");
       myId = socket.id;
       socket.emit("join", { username });
     });
@@ -194,7 +196,7 @@
       data.forEach(({ id, username, position }) => {
         if (!players[id]) {
           const { group, nameTag } = createPlayer(username);
-          group.position.set(position.x, 0, position.z);
+          if (position) group.position.set(position.x, 0, position.z);
           scene.add(group);
           players[id] = { group, nameTag, username };
         }
@@ -215,7 +217,13 @@
       }
     });
 
-    window.addEventListener("beforeunload", () => socket.emit("leave"));
+    window.addEventListener("keydown", (e) => {
+      if (e.key === 'v') isFirstPerson = !isFirstPerson;
+    });
+
+    window.addEventListener("beforeunload", () => {
+      socket.emit("leave");
+    });
 
     init();
   </script>
