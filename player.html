@@ -1,51 +1,281 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Simple Test</title>
+  <title>NovaGG - Player</title>
   <style>
-    body { margin: 0; overflow: hidden; }
+    body { margin: 0; overflow: hidden; font-family: sans-serif; }
     canvas { display: block; }
+
+    #chat {
+      position: absolute;
+      bottom: 10px;
+      left: 10px;
+      background: rgba(0,0,0,0.6);
+      padding: 10px;
+      border-radius: 10px;
+      max-width: 300px;
+      color: white;
+    }
+
+    #messages {
+      max-height: 150px;
+      overflow-y: auto;
+      font-size: 14px;
+    }
+
+    #messageInput {
+      width: 100%;
+      border: none;
+      padding: 5px;
+      box-sizing: border-box;
+    }
   </style>
 </head>
 <body>
+  <div id="chat">
+    <div id="messages"></div>
+    <input type="text" id="messageInput" placeholder="Type a message..." autocomplete="off"/>
+  </div>
+
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.min.js"></script>
+
   <script>
-    // Basic scene setup
+    const socket = io("http://localhost:3000");
+
+    // Three.js setup
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x87ceeb); // blue sky
 
     const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
-    camera.position.set(0, 2, 5);
-    camera.lookAt(0, 0, 0);
-
     const renderer = new THREE.WebGLRenderer();
     renderer.setSize(window.innerWidth, window.innerHeight);
     document.body.appendChild(renderer.domElement);
 
     // Baseplate
-    const groundGeo = new THREE.BoxGeometry(20, 1, 20);
+    const groundGeo = new THREE.BoxGeometry(100, 1, 100);
     const groundMat = new THREE.MeshBasicMaterial({ color: 0x444444 });
     const ground = new THREE.Mesh(groundGeo, groundMat);
     ground.position.y = -0.5;
     scene.add(ground);
 
-    // Player cube
-    const playerGeo = new THREE.BoxGeometry(1, 1.5, 1);
-    const playerMat = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
-    const player = new THREE.Mesh(playerGeo, playerMat);
-    player.position.y = 0.75;
-    scene.add(player);
+    // Player storage
+    const players = {};
+    let myId = null;
+    let isFirstPerson = true;
+    const keys = {};
 
+    // Chat elements
+    const messages = document.getElementById('messages');
+    const input = document.getElementById('messageInput');
+
+    function addMessage(msg) {
+      const el = document.createElement('div');
+      el.textContent = msg;
+      messages.appendChild(el);
+      messages.scrollTop = messages.scrollHeight;
+    }
+
+    // Handle chat input
+    input.addEventListener('keydown', e => {
+      if (e.key === 'Enter' && input.value.trim()) {
+        socket.emit('chat', input.value.trim());
+        input.value = '';
+      }
+    });
+
+    // Create a player capsule with name tag div
+    function createPlayer(username) {
+      const group = new THREE.Group();
+
+      const body = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.5, 0.5, 1.5, 8),
+        new THREE.MeshBasicMaterial({ color: 0x00ff00 })
+      );
+      body.position.y = 0.75;
+
+      const head = new THREE.Mesh(
+        new THREE.SphereGeometry(0.5, 8, 8),
+        new THREE.MeshBasicMaterial({ color: 0x00ff00 })
+      );
+      head.position.y = 1.75;
+
+      group.add(body);
+      group.add(head);
+
+      const nameTag = document.createElement('div');
+      nameTag.style.position = 'absolute';
+      nameTag.style.color = 'white';
+      nameTag.style.fontSize = '12px';
+      nameTag.style.fontWeight = 'bold';
+      nameTag.style.pointerEvents = 'none'; // clicks pass through
+      nameTag.textContent = username;
+      document.body.appendChild(nameTag);
+
+      return { group, nameTag, username };
+    }
+
+    // Update screen position of name tags
+    function updateNameTags() {
+      Object.values(players).forEach(({ group, nameTag }) => {
+        const pos = group.position.clone();
+        pos.y += 2; // above head
+
+        const projected = pos.project(camera);
+
+        const x = (projected.x * 0.5 + 0.5) * window.innerWidth;
+        const y = (-projected.y * 0.5 + 0.5) * window.innerHeight;
+
+        nameTag.style.transform = `translate(-50%, -50%) translate(${x}px, ${y}px)`;
+
+        // Hide if behind camera
+        nameTag.style.display = projected.z > 1 ? 'none' : 'block';
+      });
+    }
+
+    // Movement and rotation tracking for local player
+    function moveLocalPlayer() {
+      if (!myId || !players[myId]) return;
+
+      const player = players[myId];
+      const speed = 0.1;
+      const direction = new THREE.Vector3();
+
+      if (keys['w']) direction.z -= 1;
+      if (keys['s']) direction.z += 1;
+      if (keys['a']) direction.x -= 1;
+      if (keys['d']) direction.x += 1;
+
+      if (direction.length() > 0) {
+        direction.normalize();
+        // Rotate direction by player's current rotation
+        direction.applyAxisAngle(new THREE.Vector3(0, 1, 0), player.group.rotation.y);
+        player.group.position.addScaledVector(direction, speed);
+
+        // Notify server
+        socket.emit('move', {
+          x: player.group.position.x,
+          z: player.group.position.z,
+          rotationY: player.group.rotation.y
+        });
+      }
+    }
+
+    // Handle pointer lock and mouse movement for rotation
+    window.addEventListener('click', () => {
+      if (document.pointerLockElement !== renderer.domElement) {
+        renderer.domElement.requestPointerLock();
+      }
+    });
+
+    document.addEventListener('mousemove', (e) => {
+      if (document.pointerLockElement === renderer.domElement && myId && players[myId]) {
+        const player = players[myId];
+        player.group.rotation.y -= e.movementX * 0.002;
+      }
+    });
+
+    // Handle keyboard input tracking
+    window.addEventListener('keydown', (e) => {
+      keys[e.key.toLowerCase()] = true;
+
+      // Toggle first/third person with 'v'
+      if (e.key.toLowerCase() === 'v') {
+        isFirstPerson = !isFirstPerson;
+      }
+    });
+
+    window.addEventListener('keyup', (e) => {
+      keys[e.key.toLowerCase()] = false;
+    });
+
+    // Socket.io events
+    socket.on('connect', () => {
+      myId = socket.id;
+      let username = prompt("Enter your username:");
+      if (!username) username = "Guest" + Math.floor(Math.random() * 1000);
+      socket.emit('join', { username });
+    });
+
+    socket.on('playerData', (playersData) => {
+      playersData.forEach(({ id, username, position, rotationY }) => {
+        if (!players[id]) {
+          const player = createPlayer(username);
+          if (position) player.group.position.set(position.x, 0, position.z);
+          if (rotationY !== undefined) player.group.rotation.y = rotationY;
+          scene.add(player.group);
+          players[id] = player;
+        } else {
+          // Update position & rotation for existing player (except local)
+          if (id !== myId && position) {
+            players[id].group.position.set(position.x, 0, position.z);
+            if (rotationY !== undefined) players[id].group.rotation.y = rotationY;
+          }
+        }
+      });
+    });
+
+    socket.on('playerMoved', ({ id, position, rotationY }) => {
+      if (players[id]) {
+        players[id].group.position.set(position.x, 0, position.z);
+        if (rotationY !== undefined) players[id].group.rotation.y = rotationY;
+      }
+    });
+
+    socket.on('playerLeft', (id) => {
+      if (players[id]) {
+        scene.remove(players[id].group);
+        document.body.removeChild(players[id].nameTag);
+        delete players[id];
+      }
+    });
+
+    socket.on('chat', ({ username, message }) => {
+      addMessage(`${username}: ${message}`);
+    });
+
+    socket.on('system', (msg) => {
+      addMessage(`[SYSTEM] ${msg}`);
+    });
+
+    // Render loop
     function animate() {
       requestAnimationFrame(animate);
+
+      moveLocalPlayer();
+
+      if (myId && players[myId]) {
+        const player = players[myId];
+        const eyeHeight = 1.5;
+        const eyePosition = player.group.position.clone();
+        eyePosition.y += eyeHeight;
+
+        if (isFirstPerson) {
+          camera.position.copy(eyePosition);
+          const lookDir = new THREE.Vector3(0, 0, -1).applyAxisAngle(new THREE.Vector3(0,1,0), player.group.rotation.y);
+          camera.lookAt(eyePosition.clone().add(lookDir));
+        } else {
+          const offset = new THREE.Vector3(0, 3, 5).applyAxisAngle(new THREE.Vector3(0,1,0), player.group.rotation.y);
+          camera.position.copy(eyePosition.clone().add(offset));
+          camera.lookAt(eyePosition);
+        }
+      }
+
       renderer.render(scene, camera);
+      updateNameTags();
     }
+
     animate();
 
     window.addEventListener('resize', () => {
       camera.aspect = window.innerWidth/window.innerHeight;
       camera.updateProjectionMatrix();
       renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    // Notify server when leaving page
+    window.addEventListener('beforeunload', () => {
+      socket.emit('leave');
     });
   </script>
 </body>
