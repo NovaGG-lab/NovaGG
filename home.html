@@ -322,12 +322,14 @@
       const gameItem = document.createElement("div");
       gameItem.classList.add("game-item");
       gameItem.innerHTML = `
-        <img src="${game.icon}" alt="${game.name} Icon" class="game-icon" />
-        <div>
-          <div class="game-name">${game.name}</div>
-          <small>By: ${game.creatorName}</small>
-        </div>
-      `;
+  <img src="${game.icon}" alt="${game.name} Icon" class="game-icon" />
+  <div>
+    <div class="game-name">${game.name}</div>
+    <small>By: ${game.creatorName}</small><br />
+    <a href="player.html?gameId=${docSnap.id}" class="play-button" style="color:#0f0; text-decoration:underline; font-size:0.9rem;">▶ Play</a>
+  </div>
+`;
+
       gameItem.addEventListener("click", () => {
         gameDetails.innerHTML = `
           <h2>${game.name}</h2>
