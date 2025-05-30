@@ -9,6 +9,8 @@ const io = new Server(server, { cors: { origin: "*" } });
 const players = {};
 const bannedWords = ['fuck', 'shit', 'bitch', 'ass'];
 
+app.use(express.static(__dirname));
+
 function filterMessage(message) {
   const regex = new RegExp(bannedWords.join('|'), 'gi');
   return message.replace(regex, '****');
