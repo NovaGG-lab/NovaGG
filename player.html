@@ -193,15 +193,16 @@
     });
 
     socket.on("playerData", (data) => {
-      data.forEach(({ id, username, position }) => {
-        if (!players[id]) {
-          const { group, nameTag } = createPlayer(username);
-          if (position) group.position.set(position.x, 0, position.z);
-          scene.add(group);
-          players[id] = { group, nameTag, username };
-        }
-      });
-    });
+  data.forEach(({ id, username, position }) => {
+    if (!players[id]) {
+      const { group, nameTag } = createPlayer(username);
+      if (position) group.position.set(position.x, 0, position.z);
+      scene.add(group);
+      players[id] = { group, nameTag, username };
+    }
+  });
+});
+
 
     socket.on("playerMoved", ({ id, position }) => {
       if (players[id]) {
