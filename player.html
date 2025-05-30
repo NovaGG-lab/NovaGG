@@ -5,11 +5,12 @@
   <style>
     body { margin: 0; overflow: hidden; font-family: sans-serif; }
     canvas { display: block; }
+
     #chat {
       position: absolute;
       bottom: 10px;
       left: 10px;
-      background: rgba(0,0,0,0.5);
+      background: rgba(0,0,0,0.6);
       padding: 10px;
       border-radius: 10px;
       max-width: 300px;
@@ -22,6 +23,8 @@
     }
     #messageInput {
       width: 100%;
+      border: none;
+      padding: 5px;
     }
   </style>
 </head>
@@ -37,66 +40,75 @@
   <script>
     const socket = io("http://localhost:3000");
 
-    let scene, camera, renderer, myId, isFirstPerson = false;
+    let scene, camera, renderer;
+    let myId = null;
+    let isFirstPerson = true;
     const players = {};
 
-    // Chat filter (very basic)
-    const bannedWords = ['fuck', 'shit', 'bitch', 'ass']; // Add more as needed
-    const filterMessage = (msg) => {
-      const regex = new RegExp(bannedWords.join('|'), 'gi');
-      return msg.replace(regex, '****');
-    };
+    const keys = {};
+    let velocity = { x: 0, z: 0 };
 
-    // HTML chat elements
-    const messagesDiv = document.getElementById('messages');
+    const chatBox = document.getElementById('messages');
     const messageInput = document.getElementById('messageInput');
+
     messageInput.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' && messageInput.value.trim()) {
-        const msg = filterMessage(messageInput.value.trim());
-        socket.emit('chat', msg);
+        socket.emit('chat', messageInput.value.trim());
         messageInput.value = '';
       }
     });
 
     socket.on('chat', ({ username, message }) => {
-      const msgEl = document.createElement('div');
-      msgEl.textContent = `${username}: ${message}`;
-      messagesDiv.appendChild(msgEl);
-      messagesDiv.scrollTop = messagesDiv.scrollHeight;
+      const el = document.createElement('div');
+      el.textContent = `${username}: ${message}`;
+      chatBox.appendChild(el);
+      chatBox.scrollTop = chatBox.scrollHeight;
     });
 
-    // Scene Setup
     function init() {
       scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x87ceeb); // blue sky
+
       camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
       renderer = new THREE.WebGLRenderer();
       renderer.setSize(window.innerWidth, window.innerHeight);
       document.body.appendChild(renderer.domElement);
 
-      const baseplate = new THREE.Mesh(
+      // Baseplate
+      const ground = new THREE.Mesh(
         new THREE.BoxGeometry(100, 1, 100),
-        new THREE.MeshBasicMaterial({ color: 0x333333 })
+        new THREE.MeshBasicMaterial({ color: 0x444444 })
       );
-      baseplate.position.y = -0.5;
-      scene.add(baseplate);
+      ground.position.y = -0.5;
+      scene.add(ground);
 
-      camera.position.y = 2;
-      camera.position.z = 5;
+      window.addEventListener('keydown', e => keys[e.key.toLowerCase()] = true);
+      window.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
 
-      // Switch camera mode on keypress
-      window.addEventListener('keydown', (e) => {
-        if (e.key === 'v') {
-          isFirstPerson = !isFirstPerson;
+      window.addEventListener('click', () => {
+        if (document.pointerLockElement !== renderer.domElement) {
+          renderer.domElement.requestPointerLock();
         }
+      });
+
+      document.addEventListener('mousemove', (event) => {
+        if (document.pointerLockElement === renderer.domElement && myId && players[myId]) {
+          const me = players[myId];
+          me.group.rotation.y -= event.movementX * 0.002;
+        }
+      });
+
+      window.addEventListener('keydown', (e) => {
+        if (e.key === 'v') isFirstPerson = !isFirstPerson;
       });
 
       animate();
     }
 
-    function createCapsule() {
+    function createPlayer(username) {
       const group = new THREE.Group();
 
-      const cylinder = new THREE.Mesh(
+      const body = new THREE.Mesh(
         new THREE.CylinderGeometry(0.5, 0.5, 1.5, 8),
         new THREE.MeshBasicMaterial({ color: 0x00ff00 })
       );
@@ -111,12 +123,11 @@
       nameTag.style.color = 'white';
       nameTag.style.fontSize = '12px';
       nameTag.style.fontWeight = 'bold';
-      nameTag.classList.add('nameTag');
       document.body.appendChild(nameTag);
 
-      group.add(cylinder);
+      group.add(body);
       group.add(head);
-      return { group, nameTag };
+      return { group, nameTag, username };
     }
 
     function updateNameTags() {
@@ -130,18 +141,41 @@
       });
     }
 
+    function moveLocalPlayer() {
+      if (!myId || !players[myId]) return;
+
+      const me = players[myId];
+      const speed = 0.1;
+      const dir = new THREE.Vector3();
+
+      if (keys['w']) dir.z -= 1;
+      if (keys['s']) dir.z += 1;
+      if (keys['a']) dir.x -= 1;
+      if (keys['d']) dir.x += 1;
+
+      dir.normalize().applyAxisAngle(new THREE.Vector3(0, 1, 0), me.group.rotation.y);
+      me.group.position.addScaledVector(dir, speed);
+
+      socket.emit("move", { x: me.group.position.x, z: me.group.position.z });
+    }
+
     function animate() {
       requestAnimationFrame(animate);
+      moveLocalPlayer();
 
       if (myId && players[myId]) {
         const me = players[myId];
-        camera.position.copy(me.group.position);
+        const eye = me.group.position.clone();
+        eye.y += 1;
+
         if (isFirstPerson) {
-          camera.position.y += 1;
-          camera.lookAt(me.group.position.x, me.group.position.y + 1, me.group.position.z + 1);
+          camera.position.copy(eye);
+          const lookDir = new THREE.Vector3(0, 0, -1).applyAxisAngle(new THREE.Vector3(0, 1, 0), me.group.rotation.y);
+          camera.lookAt(eye.clone().add(lookDir));
         } else {
-          camera.position.z = me.group.position.z + 5;
-          camera.lookAt(me.group.position);
+          const back = new THREE.Vector3(0, 0, 5).applyAxisAngle(new THREE.Vector3(0, 1, 0), me.group.rotation.y);
+          camera.position.copy(eye.clone().add(back));
+          camera.lookAt(eye);
         }
       }
 
@@ -151,7 +185,7 @@
 
     // Socket Events
     socket.on("connect", () => {
-      const username = prompt("Enter your username:").substring(0, 16);
+      const username = prompt("Enter username:");
       myId = socket.id;
       socket.emit("join", { username });
     });
@@ -159,9 +193,9 @@
     socket.on("playerData", (data) => {
       data.forEach(({ id, username, position }) => {
         if (!players[id]) {
-          const { group, nameTag } = createCapsule();
+          const { group, nameTag } = createPlayer(username);
+          group.position.set(position.x, 0, position.z);
           scene.add(group);
-          group.position.set(position?.x || 0, 0, position?.z || 0);
           players[id] = { group, nameTag, username };
         }
       });
@@ -181,9 +215,7 @@
       }
     });
 
-    window.addEventListener("beforeunload", () => {
-      socket.emit("leave");
-    });
+    window.addEventListener("beforeunload", () => socket.emit("leave"));
 
     init();
   </script>
